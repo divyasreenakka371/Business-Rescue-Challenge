@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShelfSure — the availability trust layer for NOVA CART</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F3F6; --card:#FFFFFF; --card2:#E7EBF2; --ink:#0F1E3D; --ink2:#4A5874; --line:#D3DAE6;
+  --brand:#0E7A5A; --brand-soft:#D8F0E6; --tag:#FFD23F; --tag-ink:#3A2E00;
+  --bad:#D2432A; --bad-soft:#FADFD8; --warn:#9A5B06; --warn-soft:#FBEBC8; --info:#2D5BD1; --info-soft:#DCE6FB;
+  --frame:#0F1E3D; --screen:#FFFFFF; --screen2:#F2F4F8;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A1224; --card:#121C33; --card2:#1A2642; --ink:#E8EDF8; --ink2:#9AA8C4; --line:#26345A;
+    --brand:#43D1A0; --brand-soft:#123B30; --tag:#FFD23F; --tag-ink:#2A2000;
+    --bad:#FF8264; --bad-soft:#3B1D17; --warn:#F0B24A; --warn-soft:#37290C; --info:#8FB0FF; --info-soft:#18284F;
+    --frame:#26345A; --screen:#0F192E; --screen2:#16223D; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A1224; --card:#121C33; --card2:#1A2642; --ink:#E8EDF8; --ink2:#9AA8C4; --line:#26345A;
+  --brand:#43D1A0; --brand-soft:#123B30; --tag:#FFD23F; --tag-ink:#2A2000;
+  --bad:#FF8264; --bad-soft:#3B1D17; --warn:#F0B24A; --warn-soft:#37290C; --info:#8FB0FF; --info-soft:#18284F;
+  --frame:#26345A; --screen:#0F192E; --screen2:#16223D; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+h1,h2,h3,h4{font-family:var(--display);margin:0;line-height:1.08;letter-spacing:-.02em}
+h1{font-size:clamp(2.3rem,5.4vw,4.1rem);font-weight:800}
+h2{font-size:clamp(1.8rem,3.4vw,2.7rem);font-weight:800}
+h3{font-size:clamp(1.25rem,2vw,1.55rem);font-weight:700}
+h4{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
+p{margin:0}
+button{font-family:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--info);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(16px,3vw,32px)}
+.muted{color:var(--ink2)}
+.small{font-size:.875rem}
+.lede{font-size:clamp(1.05rem,1.5vw,1.2rem);color:var(--ink2);max-width:62ch}
+
+/* buttons & pills */
+.btn{font:600 .95rem var(--body);padding:.72rem 1.15rem;border-radius:10px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;transition:transform .12s ease}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.tag{background:var(--tag);color:var(--tag-ink);border-color:var(--tag-ink)}
+.btn.sm{padding:.45rem .8rem;font-size:.85rem;border-radius:8px}
+.pill{display:inline-block;font-size:.78rem;font-weight:700;padding:.15rem .6rem;border-radius:99px}
+.pill.ok{background:var(--brand-soft);color:var(--brand)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.info{background:var(--info-soft);color:var(--info)}
+.pill.flat{background:var(--card2);color:var(--ink2)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.2rem;text-decoration:none;white-space:nowrap}
+.logo small{font-family:var(--body);font-weight:500;font-size:.75rem;color:var(--ink2)}
+.tagmark{width:26px;height:26px;background:var(--tag);border:2px solid var(--tag-ink);border-radius:5px 5px 5px 12px;display:grid;place-items:center;color:var(--tag-ink);font-size:.8rem;font-weight:800}
+.nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.nav a{padding:.45rem .8rem;border-radius:8px;text-decoration:none;font-weight:600;font-size:.92rem;color:var(--ink2);white-space:nowrap}
+.nav a:hover{background:var(--card2);color:var(--ink)}
+
+/* hero */
+.hero{padding:clamp(32px,6vw,72px) 0 24px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center}
+.hero h1 span{display:block}
+.hero .lede{margin-top:20px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);margin-top:clamp(28px,4vw,48px);border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.fact{padding:16px 18px 16px 0;border-right:1px solid var(--line)}
+.fact+.fact{padding-left:18px}
+.fact:last-child{border-right:0}
+.fact b{font-family:var(--display);font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;display:block;line-height:1}
+.fact span{font-size:.88rem;color:var(--ink2);display:block;margin-top:6px}
+.fact.neg b{color:var(--bad)}
+
+/* shelf widget */
+.shelf{background:var(--card);border:2px solid var(--ink);border-radius:20px;padding:18px;box-shadow:8px 8px 0 var(--tag)}
+.seg{display:inline-flex;background:var(--card2);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;font-weight:700;font-size:.85rem;padding:.45rem .85rem;border-radius:8px;cursor:pointer;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;margin-top:16px}
+.tile{background:var(--screen2);border-radius:12px;padding:10px;box-shadow:0 6px 0 var(--card2);min-height:128px;display:flex;flex-direction:column;gap:4px}
+.tile .ico{font-size:1.6rem;line-height:1}
+.tile b{font-size:.82rem;line-height:1.2}
+.tile .row2{margin-top:auto;display:flex;flex-direction:column;gap:4px}
+.mini-chip{font-size:.7rem;font-weight:700;padding:.1rem .45rem;border-radius:6px;display:inline-block;width:fit-content}
+.mini-chip.ok{background:var(--brand-soft);color:var(--brand)}
+.mini-chip.bad{background:var(--bad-soft);color:var(--bad)}
+.mini-chip.ask{background:var(--warn-soft);color:var(--warn)}
+.mini-chip.off{background:var(--card2);color:var(--ink2)}
+.shelf-sum{margin-top:18px;padding:12px 14px;border-radius:10px;font-weight:600;font-size:.95rem}
+.shelf-sum.bad{background:var(--bad-soft);color:var(--bad)}
+.shelf-sum.ok{background:var(--brand-soft);color:var(--brand)}
+
+/* sections */
+section.sec{padding:clamp(48px,7vw,96px) 0;border-top:1px solid var(--line)}
+.sec-head{max-width:880px;margin-bottom:clamp(24px,4vw,44px);display:grid;gap:14px}
+.sub{margin-top:clamp(36px,5vw,60px)}
+.sub>h3{margin-bottom:6px}
+.sub>.muted{max-width:70ch;margin-bottom:20px}
+.two{display:grid;grid-template-columns:1.35fr 1fr;gap:clamp(24px,4vw,56px);align-items:start}
+
+/* ledger */
+.ledger{width:100%;border-collapse:collapse;font-size:.96rem}
+.ledger th{font-weight:600;color:var(--ink2);text-align:right;padding:8px 10px;border-bottom:2px solid var(--ink);font-size:.82rem}
+.ledger th:first-child,.ledger td:first-child{text-align:left;padding-left:0}
+.ledger td{padding:10px;border-bottom:1px solid var(--line);text-align:right}
+.ledger td:first-child{font-weight:600}
+.ledger tr.sep td{padding-top:20px;border-bottom:2px solid var(--ink);font-family:var(--display);font-weight:800;text-align:left;font-size:1rem}
+.ledger tr.derived td{background:var(--tag);color:var(--tag-ink)}
+.ledger tr.derived td:first-child{padding-left:10px}
+.chg{font-weight:700;border-radius:6px;padding:.1rem .5rem;display:inline-block;min-width:68px;text-align:center}
+.chg.g{background:var(--brand-soft);color:var(--brand)}
+.chg.b{background:var(--bad-soft);color:var(--bad)}
+.bigstats{display:grid;gap:0}
+.bigstat{padding:18px 0;border-bottom:1px solid var(--line)}
+.bigstat:first-child{border-top:2px solid var(--ink)}
+.bigstat b{font-family:var(--display);font-weight:800;font-size:2.6rem;line-height:1;display:block}
+.bigstat p{margin-top:8px;color:var(--ink2);font-size:.95rem}
+.foot{font-size:.82rem;color:var(--ink2);margin-top:14px;max-width:80ch}
+
+/* funnel */
+.funnel{display:grid;gap:10px}
+.fstep{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:14px;align-items:center}
+.fstep .lab{font-weight:600;font-size:.92rem;line-height:1.25}
+.fbar{height:40px;border-radius:6px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:700;min-width:96px}
+.fbar span{font-size:.8rem;font-weight:600;opacity:.85}
+.fbar.hot{background:var(--brand)}
+.fbar.hot,.fbar.hot span{color:#fff}
+.note{border-left:4px solid var(--tag);padding:4px 0 4px 16px;max-width:60ch}
+.note b{font-family:var(--display);font-size:1.15rem}
+.note p{margin-top:6px;color:var(--ink2)}
+
+/* cascade */
+.root{background:var(--ink);color:var(--paper);border-radius:14px;padding:20px 22px;max-width:760px}
+.root h4{font-size:1.15rem;margin-bottom:6px}
+.root p{opacity:.88;font-size:.95rem}
+.casc{margin:0 0 0 22px;padding:10px 0 0 24px;border-left:3px solid var(--ink);display:grid;gap:0;max-width:980px}
+.crow{display:grid;grid-template-columns:150px 1fr auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);position:relative}
+.crow::before{content:"";position:absolute;left:-24px;top:50%;width:20px;border-top:3px solid var(--ink)}
+.crow b{font-family:var(--display);font-size:1.5rem;font-weight:800;line-height:1.05}
+.crow b small{display:block;font-family:var(--body);font-size:.78rem;font-weight:500;color:var(--ink2)}
+.crow p{font-size:.95rem}
+.crow p em{font-style:normal;font-weight:700}
+
+/* execs */
+.execs{border-top:2px solid var(--ink)}
+.execs details{border-bottom:1px solid var(--line)}
+.execs summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:150px 1fr auto;gap:16px;padding:16px 0;align-items:center}
+.execs summary::-webkit-details-marker{display:none}
+.execs summary b{font-family:var(--display);font-size:1.05rem}
+.execs summary q{font-size:.95rem;color:var(--ink2);quotes:"“" "”"}
+.execs .body{padding:0 0 18px 166px;max-width:900px;color:var(--ink2);font-size:.95rem}
+.execs .body p+p{margin-top:8px}
+.execs details[open] summary{background:var(--card2);margin:0 -12px;padding-left:12px;padding-right:12px}
+.execs details[open] .body{background:var(--card2);margin:0 -12px;padding:0 12px 18px 178px}
+
+/* matrix */
+.matrix{width:100%;border-collapse:collapse;font-size:.92rem;min-width:720px}
+.matrix th{font-size:.8rem;font-weight:600;color:var(--ink2);padding:8px;border-bottom:2px solid var(--ink);text-align:center}
+.matrix th:first-child,.matrix td:first-child{text-align:left}
+.matrix td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:center}
+.matrix td:first-child{font-weight:600;max-width:300px}
+.matrix tr.win td{background:var(--tag);color:var(--tag-ink)}
+.dots{letter-spacing:2px;font-size:.8rem}
+.scroll-x{overflow-x:auto}
+.problem{margin-top:clamp(36px,5vw,60px);background:var(--ink);color:var(--paper);border-radius:20px;padding:clamp(22px,4vw,40px)}
+.problem h3{font-size:clamp(1.4rem,2.6vw,2rem);max-width:30ch}
+.problem p{margin-top:14px;opacity:.9;max-width:70ch}
+
+/* product demo */
+.how{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:0;border:2px solid var(--ink);border-radius:16px;overflow:hidden;margin-bottom:28px;background:var(--card)}
+.how>div{padding:16px 18px}
+.how>div+div{border-left:1px solid var(--line)}
+.how h4{margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.how code{font-family:inherit;font-weight:700;background:var(--info-soft);color:var(--info);padding:.1rem .35rem;border-radius:5px;font-size:.88rem}
+.how p{font-size:.92rem;color:var(--ink2)}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.roletabs{display:flex;gap:6px;margin-left:auto}
+.caption{min-height:64px;background:var(--tag);color:var(--tag-ink);border:2px solid var(--tag-ink);border-radius:12px;padding:12px 16px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;font-size:.98rem}
+.caption.idle{background:var(--card);color:var(--ink2);border:1.5px dashed var(--line);font-weight:500}
+.devices{display:grid;gap:22px;grid-template-columns:minmax(0,1fr)}
+.device{display:none}
+.devices[data-role="cust"] .device.cust,.devices[data-role="store"] .device.store,.devices[data-role="ops"] .device.ops{display:block}
+.dlabel{font-family:var(--display);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;font-size:1rem}
+.dlabel small{font-family:var(--body);font-weight:500;color:var(--ink2);font-size:.82rem}
+@media(min-width:1180px){
+  .devices{grid-template-columns:350px 350px minmax(0,1fr)}
+  .devices .device{display:block}
+  .roletabs{display:none}
+}
+.phone{height:690px;max-width:380px;margin:0 auto;border:8px solid var(--frame);border-radius:38px;background:var(--screen);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 22px 40px -22px rgba(15,30,61,.55);transition:outline-color .2s}
+.device.live .phone,.device.live .console{outline:4px solid var(--tag);outline-offset:5px}
+.sbar{display:flex;justify-content:space-between;padding:9px 18px 5px;font-size:.72rem;font-weight:700;color:var(--ink2)}
+.shead{padding:4px 14px 10px;display:grid;gap:8px}
+.shead .where{font-size:.78rem;color:var(--ink2)}
+.shead .where b{color:var(--ink)}
+.search{width:100%;padding:.6rem .8rem;border-radius:10px;border:1.5px solid var(--line);background:var(--screen2);color:var(--ink);font:500 .92rem var(--body)}
+.fchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.fchip{border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:.25rem .7rem;font-size:.78rem;font-weight:600;white-space:nowrap;cursor:pointer;color:var(--ink2)}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sbody{flex:1;overflow-y:auto;padding:0 14px 14px}
+.sfoot{padding:10px 14px 14px;border-top:1px solid var(--line);background:var(--screen)}
+.grp{font-size:.78rem;font-weight:700;color:var(--ink2);padding:12px 0 4px;display:flex;justify-content:space-between}
+.row{display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.row.dim{opacity:.62}
+.row .ico{font-size:1.5rem;text-align:center}
+.row .nm{font-weight:700;font-size:.9rem;line-height:1.2}
+.row .px{font-weight:700;font-size:.9rem;text-align:right}
+.chip{display:inline-block;font-size:.7rem;font-weight:700;padding:.08rem .45rem;border-radius:6px;margin-top:3px}
+.chip.ok{background:var(--brand-soft);color:var(--brand)}
+.chip.ask{background:var(--warn-soft);color:var(--warn)}
+.chip.off{background:var(--card2);color:var(--ink2)}
+.mini{border:1.5px solid var(--ink);background:transparent;border-radius:8px;padding:.3rem .65rem;font-weight:700;font-size:.8rem;cursor:pointer;margin-top:4px}
+.mini.add{background:var(--ink);color:var(--paper)}
+.mini.go{background:var(--brand);color:#fff;border-color:var(--brand)}
+.mini.stop{border-color:var(--bad);color:var(--bad)}
+.stepper{display:inline-flex;align-items:center;gap:8px;margin-top:4px}
+.stepper button{width:26px;height:26px;border-radius:7px;border:1.5px solid var(--ink);background:transparent;font-weight:800;cursor:pointer;line-height:1}
+.cartbar{width:100%;border:0;border-radius:12px;background:var(--ink);color:var(--paper);padding:.85rem 1rem;font-weight:700;font-size:.95rem;cursor:pointer;display:flex;justify-content:space-between}
+.cartbar[disabled]{opacity:.45;cursor:default}
+.panel{border-radius:12px;padding:12px 14px;margin:12px 0;font-size:.86rem}
+.panel.ok{background:var(--brand-soft);color:var(--brand)}
+.panel.ask{background:var(--warn-soft);color:var(--warn)}
+.panel.bad{background:var(--bad-soft);color:var(--bad)}
+.panel.info{background:var(--info-soft);color:var(--info)}
+.panel b{display:block;margin-bottom:2px}
+.sumrow{display:flex;justify-content:space-between;font-size:.88rem;padding:3px 0}
+.sumrow.tot{font-weight:800;border-top:1.5px solid var(--ink);margin-top:6px;padding-top:8px;font-size:1rem}
+.back{background:none;border:0;font-weight:700;cursor:pointer;font-size:.88rem;padding:0;color:var(--info)}
+.empty{text-align:center;padding:30px 10px;color:var(--ink2);font-size:.9rem}
+.empty b{display:block;color:var(--ink);margin-bottom:4px}
+.step{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.dot{width:18px;height:18px;border-radius:50%;margin-top:2px;display:grid;place-items:center;font-size:.65rem;font-weight:800;color:#fff}
+.dot.ok{background:var(--brand)}.dot.wait{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.sw{background:var(--info)}.dot.rm{background:var(--ink2)}
+.swap{background:var(--info-soft);border-radius:10px;padding:10px;margin-top:8px}
+.swap .acts{display:flex;gap:8px;margin-top:8px}
+.bar{height:5px;border-radius:5px;background:var(--card2);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--warn);transition:width 1s linear}
+
+/* store phone */
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 8px}
+.tabs button{flex:1;border:0;background:none;padding:.65rem .2rem;font-weight:700;font-size:.82rem;color:var(--ink2);cursor:pointer;border-bottom:3px solid transparent;position:relative}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.badge{background:var(--bad);color:#fff;border-radius:99px;font-size:.65rem;padding:.02rem .38rem;margin-left:4px}
+.ring{--v:80;width:62px;height:62px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--v)*1%),var(--card2) 0);display:grid;place-items:center;flex:none}
+.ring::after{content:attr(data-t);width:48px;height:48px;border-radius:50%;background:var(--screen);display:grid;place-items:center;font-weight:800;font-size:.9rem}
+.storehead{display:flex;gap:12px;align-items:center;padding:6px 14px 10px}
+.storehead select{font:700 .95rem var(--body);background:transparent;color:var(--ink);border:0;border-bottom:1.5px solid var(--line);padding:2px 0;max-width:100%}
+.storehead p{font-size:.78rem;color:var(--ink2)}
+.req,.shc{border:2px solid var(--ink);border-radius:14px;padding:12px;margin-top:12px;background:var(--screen)}
+.req.new{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--tag)}60%{box-shadow:0 0 0 8px transparent}}
+.req h5,.shc h5{margin:0;font-family:var(--display);font-size:1rem}
+.req .why,.shc .why{font-size:.8rem;color:var(--ink2);margin:6px 0 8px}
+.btn2{display:flex;gap:8px}
+.btn2 button{flex:1;border-radius:10px;border:1.5px solid var(--ink);padding:.6rem .3rem;font-weight:700;cursor:pointer;background:transparent;font-size:.86rem}
+.btn2 .yes{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn2 .no{border-color:var(--bad);color:var(--bad)}
+.ins{padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;font-size:.88rem}
+.ins b{font-weight:700}
+
+/* console */
+.console{height:690px;overflow-y:auto;border:2px solid var(--ink);border-radius:20px;background:var(--card);padding:16px;display:grid;gap:18px;align-content:start;transition:outline-color .2s}
+.console h4{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.kpi{padding:10px 10px 10px 0;border-right:1px solid var(--line)}
+.kpi:nth-child(3n+2),.kpi:nth-child(3n){padding-left:10px}
+.kpi:nth-child(3n){border-right:0}
+.kpi:nth-child(n+4){border-top:1px solid var(--line)}
+.kpi b{font-family:var(--display);font-size:1.6rem;font-weight:800;display:block;line-height:1.05}
+.kpi span{font-size:.74rem;color:var(--ink2);line-height:1.2;display:block;margin-top:3px}
+.kpi.hl{background:var(--brand-soft)}
+.kpi.hl b{color:var(--brand)}
+.slider{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.84rem;font-weight:600;margin-bottom:10px}
+.slider input{grid-column:1/-1;width:100%;accent-color:var(--brand)}
+.slider output{font-weight:800}
+.cf{font-size:.84rem;background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:10px 12px}
+.log{display:grid;gap:0;max-height:210px;overflow-y:auto;font-size:.8rem}
+.log div{padding:7px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:62px 1fr;gap:8px}
+.log time{color:var(--ink2);font-size:.72rem}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem;gap:8px}
+.srow b{font-weight:700}
+
+/* impact */
+.sim{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:clamp(20px,4vw,48px);align-items:start}
+.sim-in{border:2px solid var(--ink);border-radius:18px;padding:20px;background:var(--card);position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px}
+.sim-in .slider{margin-bottom:14px}
+.sim-in .slider small{grid-column:1/-1;font-weight:400;color:var(--ink2);font-size:.76rem;margin-top:-2px}
+.toggle{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;font-weight:600;padding-top:12px;border-top:1px solid var(--line)}
+.toggle input{margin-top:4px;accent-color:var(--brand);width:18px;height:18px}
+.toggle small{display:block;font-weight:400;color:var(--ink2)}
+.headline-num{display:grid;grid-template-columns:repeat(3,1fr);border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.headline-num>div{padding:16px 14px 16px 0;border-right:1px solid var(--line)}
+.headline-num>div+div{padding-left:14px}
+.headline-num>div:last-child{border-right:0}
+.headline-num b{font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,3vw,2.3rem);line-height:1;display:block}
+.headline-num span{font-size:.84rem;color:var(--ink2);display:block;margin-top:6px}
+.levers{margin-top:26px;display:grid;gap:12px}
+.lever{display:grid;grid-template-columns:minmax(120px,210px) 1fr 74px;gap:12px;align-items:center;font-size:.9rem}
+.lever .track{height:22px;background:var(--card2);border-radius:5px;overflow:hidden}
+.lever .track i{display:block;height:100%;background:var(--brand);transition:width .3s}
+.lever .track i.alt{background:var(--info)}
+.lever .track i.tg{background:var(--tag)}
+.lever b{text-align:right}
+.lever small{display:block;color:var(--ink2);font-size:.76rem;line-height:1.2}
+.chart{margin-top:30px;border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
+.chart svg{width:100%;height:auto;display:block}
+.chart .ax{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--ink2);font-size:11px;font-family:var(--body)}
+.chart .l1{fill:none;stroke:var(--brand);stroke-width:3}
+.chart .l2{fill:none;stroke:var(--info);stroke-width:3;stroke-dasharray:6 5}
+.chart .inv{stroke:var(--bad);stroke-width:2;stroke-dasharray:4 4}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--ink2);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.kt{width:100%;border-collapse:collapse;margin-top:26px;font-size:.93rem}
+.kt th{text-align:right;font-size:.8rem;color:var(--ink2);font-weight:600;padding:6px 8px;border-bottom:2px solid var(--ink)}
+.kt th:first-child,.kt td:first-child{text-align:left;padding-left:0}
+.kt td{text-align:right;padding:9px 8px;border-bottom:1px solid var(--line)}
+.kt td:first-child{font-weight:600}
+.budget{display:flex;height:46px;border-radius:10px;overflow:hidden;border:2px solid var(--ink);margin-bottom:12px}
+.budget div{display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#fff;min-width:0;overflow:hidden}
+.blist{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 28px;font-size:.9rem}
+.blist div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.blist i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:2px solid var(--ink)}
+.phase{padding:16px 16px 18px 0;border-right:1px solid var(--line)}
+.phase+.phase{padding-left:16px}
+.phase:last-child{border-right:0}
+.phase b{font-family:var(--display);font-size:1.5rem;font-weight:800;display:block;line-height:1}
+.phase h4{margin:6px 0 6px}
+.phase p{font-size:.88rem;color:var(--ink2)}
+.gate{margin-top:22px;border:2px solid var(--ink);border-radius:16px;padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:20px 36px;background:var(--card)}
+.gate h4{margin-bottom:6px}
+.gate ul{margin:0;padding-left:1.1rem;font-size:.92rem;color:var(--ink2)}
+.gate li{margin-bottom:4px}
+.risks{display:grid;grid-template-columns:repeat(2,1fr);gap:0 36px}
+.risk{padding:14px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.risk b{display:block;font-family:var(--display)}
+.risk span{color:var(--ink2)}
+
+/* prompts */
+.journey{counter-reset:pj;border-top:2px solid var(--ink)}
+.journey details{border-bottom:1px solid var(--line)}
+.journey summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:44px 1fr auto;gap:14px;padding:18px 0;align-items:center;font-family:var(--display);font-weight:700;font-size:1.1rem}
+.journey summary::-webkit-details-marker{display:none}
+.journey summary::before{counter-increment:pj;content:counter(pj);width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:.95rem}
+.journey .pb{padding:0 0 22px 58px;display:grid;gap:12px;max-width:940px}
+.pq{background:var(--card2);border-radius:10px;padding:12px 14px;font-size:.92rem;border-left:4px solid var(--info)}
+.pb h5{margin:0 0 2px;font-size:.84rem;color:var(--ink2);font-weight:700}
+.pb p{font-size:.95rem}
+.pb .chg-line{border-left:4px solid var(--tag);padding-left:12px}
+
+footer{border-top:2px solid var(--ink);padding:36px 0 56px}
+.chain{font-family:var(--display);font-weight:800;font-size:clamp(1rem,2vw,1.4rem);line-height:1.5}
+.chain span{background:var(--tag);color:var(--tag-ink);padding:.05rem .5rem;border-radius:6px;white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--paper);padding:.65rem 1.1rem;border-radius:10px;font-weight:600;font-size:.9rem;opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:1000px){
+  .hero-grid,.two,.sim{grid-template-columns:1fr}
+  .sim-in{position:static}
+  .how{grid-template-columns:1fr}
+  .how>div+div{border-left:0;border-top:1px solid var(--line)}
+  .phases{grid-template-columns:1fr 1fr}
+  .phase:nth-child(2){border-right:0}
+  .phase:nth-child(n+3){border-top:1px solid var(--line)}
+  .phase:nth-child(3){padding-left:0}
+  .gate,.risks,.blist{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .facts{grid-template-columns:1fr 1fr}
+  .fact:nth-child(2){border-right:0}
+  .fact:nth-child(3){padding-left:0}
+  .fact:nth-child(n+3){border-top:1px solid var(--line)}
+  .crow{grid-template-columns:1fr;gap:6px}
+  .crow::before{display:none}
+  .execs summary{grid-template-columns:1fr auto}
+  .execs summary q{grid-column:1/-1;grid-row:2}
+  .execs .body,.execs details[open] .body{padding-left:0;padding-right:0}
+  .fstep{grid-template-columns:1fr}
+  .headline-num{grid-template-columns:1fr}
+  .headline-num>div{border-right:0;border-bottom:1px solid var(--line);padding-left:0!important}
+  .lever{grid-template-columns:1fr 70px}
+  .lever .track{grid-column:1/-1;order:3}
+  .logo small{display:none}
+  .journey summary{grid-template-columns:44px 1fr}
+  .journey summary .pill{display:none}
+  .journey .pb{padding-left:0}
+  .ledger{font-size:.86rem}
+  .chg{min-width:56px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi:nth-child(n){padding-left:0;border-right:0;border-top:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="ShelfSure home"><span class="tagmark" aria-hidden="true">✓</span>ShelfSure <small>for NOVA CART</small></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#case">Diagnosis</a>
+      <a href="#product">Live product</a>
+      <a href="#impact">Business impact</a>
+      <a href="#prompts">Prompt journey</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <h1><span>The app says it’s in stock.</span><span>The shelf disagrees.</span></h1>
+        <p class="lede">NOVA CART’s revenue is up 20%, but net revenue after promotions is down 26% and repeat orders fell from 41% to 27%. The leak isn’t acquisition. It’s a broken promise: the catalogue says “available” when the store’s shelf says otherwise. ShelfSure gives every item an honest confidence score, asks stores a one-tap question only when it matters, and lets customers pay only for what’s confirmed.</p>
+        <div class="cta-row">
+          <button class="btn tag" data-act="story">▶ Play the 30-second story</button>
+          <a class="btn" href="#product">Open the live product</a>
+          <a class="btn" href="#case">See the evidence</a>
+        </div>
+      </div>
+      <div class="shelf" aria-label="Illustration: one evening's basket">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="Compare today with ShelfSure">
+            <button data-act="hero-mode" data-m="today" aria-pressed="true">Today’s app</button>
+            <button data-act="hero-mode" data-m="ss" aria-pressed="false">With ShelfSure</button>
+          </div>
+          <span class="small muted">One evening’s basket, 6 items</span>
+        </div>
+        <div class="tiles" id="tiles"></div>
+        <div class="shelf-sum bad" id="shelf-sum"></div>
+      </div>
+    </div>
+
+    <div class="facts" role="list">
+      <div class="fact neg" role="listitem"><b>−26%</b><span>net revenue after promotions in six months (₹12.3L to ₹9.1L)</span></div>
+      <div class="fact" role="listitem"><b>35%</b><span>of cancellations are “product unavailable”, the top reason</span></div>
+      <div class="fact" role="listitem"><b>57%</b><span>of support tickets are refunds, missing items or wrong orders</span></div>
+      <div class="fact" role="listitem"><b id="hero-upside">₹4.3L</b><span>modelled monthly upside at run-rate, for a ₹25L budget</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DIAGNOSIS -->
+<section class="sec" id="case">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Growth that’s being bought, from a catalogue customers can’t trust</h2>
+      <p class="lede">We read the brief as an investigation, not a feature list. Six leaders each hold evidence for a different problem. The numbers say most of those problems share one upstream cause.</p>
+    </div>
+
+    <div class="two">
+      <div>
+        <h3>The dashboard says growth. The P&amp;L says leak.</h3>
+        <p class="muted" style="margin:6px 0 16px">Every metric from the brief, six months ago against now. The yellow row is derived: revenue minus promotional spend.</p>
+        <div class="scroll-x"><table class="ledger" id="ledger"></table></div>
+      </div>
+      <div class="bigstats" id="bigstats"></div>
+    </div>
+    <p class="foot" id="bigfoot"></p>
+
+    <div class="sub">
+      <h3>Customers don’t leave angry. They leave after a broken promise.</h3>
+      <p class="muted">The funnel below uses the case figures; acquisition cost per step is our estimate from the ₹17L promo budget, 58% of which is acquisition.</p>
+      <div class="two">
+        <div class="funnel" id="funnel"></div>
+        <div style="display:grid;gap:22px">
+          <div class="note"><b>61% of customers who stopped ordering had rated us 4★ or higher.</b><p>Ratings capture orders that were delivered. They miss the order that was cancelled, swapped without asking, refunded late, or never placed because the item wasn’t there. This is a base that quietly stopped trusting us. It isn’t an unhappy base.</p></div>
+          <div class="note"><b>The habit forms at order three, and we lose people before order two.</b><p>Customers who reach three orders have a 72% chance of ordering again next month. Only 31% of new sign-ups place a second order within 30 days.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub">
+      <h3>One cause, seven symptoms</h3>
+      <p class="muted">Each line is computed from the brief’s monthly volumes (38,500 orders, 5,900 tickets, 620 stores). Tags show what is reported and what is our inference.</p>
+      <div class="root"><h4>The store’s shelf and the app’s catalogue are not the same thing.</h4><p>Stock is typed in by hand: some stores update several times a day, others every 1–3 days, and the same shelf also serves walk-in customers all day.</p></div>
+      <div class="casc" id="casc"></div>
+    </div>
+
+    <div class="sub">
+      <h3>Each leader is right about a symptom. Only one is near the cause.</h3>
+      <p class="muted">We steelmanned every position and asked what the data supports. Open a row for the reasoning.</p>
+      <div class="execs" id="execs"></div>
+    </div>
+
+    <div class="sub">
+      <h3>Products we considered, and why we killed them</h3>
+      <p class="muted">Scored 1–5 against the brief’s constraints (₹25L, no warehouses, no hundreds of hires). Store effort is scored so that 5 means the least work for stores.</p>
+      <div class="scroll-x"><table class="matrix" id="matrix"></table></div>
+    </div>
+
+    <div class="problem">
+      <h3>Customers can’t trust what the app promises, and stores can’t afford the effort of keeping the promise true.</h3>
+      <p>Fix the truth of availability and cancellations, support load, partner loyalty and the local-store advantage all improve together. More promotions would only send more first-time customers into a catalogue that fails about three times in ten.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT -->
+<section class="sec" id="product">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>ShelfSure: one honest answer to “is it on the shelf?”</h2>
+      <p class="lede">Three surfaces share one brain. Everything below is live. Tap in any screen and the others react. Press play for the guided story, or run it yourself: order the butter, then answer as the store.</p>
+    </div>
+
+    <div class="how">
+      <div><h4>Input</h4><p>Store shelf-check taps, sales velocity from the order database, time since the last confirmation, each item’s past failure rate.</p></div>
+      <div><h4>Processing</h4><p><code>P(in stock) = (1 − e<sup>−stock ÷ (expected sales since check + 0.5)</sup>) × (1 − past failure rate, faded right after a check)</code></p><p style="margin-top:6px">Scores decay as time passes and recover the moment a store taps.</p></div>
+      <div><h4>Action</h4><p>High confidence: confirm instantly. Middle: ask the store one question, in parallel. Low: hide it, offer a swap, and log the demand.</p></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn tag sm" data-act="story">▶ Play the 30-second story</button>
+      <button class="btn sm" data-act="reset">Reset demo</button>
+      <button class="btn sm" data-act="ff">Fast-forward 2 hours</button>
+      <div class="roletabs seg" role="group" aria-label="Choose a screen">
+        <button data-act="role" data-r="cust" aria-pressed="true">Customer</button>
+        <button data-act="role" data-r="store" aria-pressed="false">Store</button>
+        <button data-act="role" data-r="ops" aria-pressed="false">Control room</button>
+      </div>
+    </div>
+    <div class="caption idle" id="caption" role="status" aria-live="polite">Try it: add “Amul Butter 500 g” in the customer app. It was last checked five hours ago, so ShelfSure will ask the store.</div>
+
+    <div class="devices" id="devices" data-role="cust">
+      <div class="device cust" data-dev="cust">
+        <div class="dlabel">Customer app <small>Anita, ordering dinner</small></div>
+        <div class="phone" id="cust"></div>
+      </div>
+      <div class="device store" data-dev="store">
+        <div class="dlabel">Store app <small>the 2-minute shelf check</small></div>
+        <div class="phone" id="store"></div>
+      </div>
+      <div class="device ops" data-dev="ops">
+        <div class="dlabel">NOVA control room <small>engine decisions, live</small></div>
+        <div class="console" id="ops"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IMPACT -->
+<section class="sec" id="impact">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>What it’s worth, and how we’ll prove it</h2>
+      <p class="lede">Every baseline is from the brief. Every assumption is a slider rather than a hidden constant. Start with the expected case, then try to break it. The pilot at the end decides whether the money is released.</p>
+    </div>
+
+    <div class="sim">
+      <div class="sim-in">
+        <h3>Assumptions</h3>
+        <div class="presets" role="group" aria-label="Scenario presets">
+          <button class="btn sm" data-act="preset" data-p="cons">Conservative</button>
+          <button class="btn sm primary" data-act="preset" data-p="exp">Expected</button>
+          <button class="btn sm" data-act="preset" data-p="opt">Optimistic</button>
+        </div>
+        <div id="sliders"></div>
+        <label class="toggle"><input type="checkbox" id="disc"><span>Hold the +30% promo increase<small>Avoids about ₹2.2L a month of net loss at today’s ₹0.57 return per ₹1.</small></span></label>
+      </div>
+      <div>
+        <div class="headline-num" id="headnum"></div>
+        <div class="levers" id="levers"></div>
+        <div class="chart">
+          <h4 style="margin-bottom:6px">Cumulative value against the ₹25L budget</h4>
+          <svg id="cum" viewBox="0 0 640 270" role="img" aria-label="Cumulative value over 12 months compared with the ₹25 lakh investment"></svg>
+          <div class="legend" id="cumlegend"></div>
+        </div>
+        <table class="kt" id="kt"></table>
+        <p class="foot">Method: revenue per order = ₹26.1L ÷ 38,500 = ₹67.8. Stock-driven cancellations = product unavailable (35% of cancellations) plus half of store rejections (18%, the rest assumed to be busy-hour capacity). Retention effect = a share of the 14-point repeat-rate drop recovered, applied to 46,000 active users. Support savings count missing-item, wrong-item and half of refund-status tickets. Partner value = stores at risk (18% of 620) retained, with half their volume assumed to shift elsewhere anyway. Effects are treated as additive and ramp over six months. The pilot exists to replace these assumptions with measurements.</p>
+      </div>
+    </div>
+
+    <div class="sub">
+      <h3>Where the ₹25L goes</h3>
+      <p class="muted">No warehouses, no hiring wave. The build reuses the partner dashboard, order database, coupon system and delivery tracking that NOVA CART already runs.</p>
+      <div class="budget" id="budget" role="img" aria-label="Budget split"></div>
+      <div class="blist" id="blist"></div>
+    </div>
+
+    <div class="sub">
+      <h3>Rollout in four phases</h3>
+      <div class="phases">
+        <div class="phase"><b>1</b><h4>Pilot, weeks 1–6</h4><p>MVP engine, shelf check and customer badges on the existing apps. 60 stores with the highest stock-driven cancellations, plus 60 matched control stores.</p></div>
+        <div class="phase"><b>2</b><h4>Gate and tune, weeks 7–12</h4><p>Read out the pilot. Tune thresholds and swap rules. If the gate is cleared, extend to about 250 stores and switch on store incentives.</p></div>
+        <div class="phase"><b>3</b><h4>Scale, months 4–5</h4><p>All 620 stores. Reliability tiers feed search ranking. Unmet-demand tips go to stores.</p></div>
+        <div class="phase"><b>4</b><h4>Compound, month 6</h4><p>Use the trusted catalogue: a multi-store “order three” journey, and promo budget moved from first-order discounts to it.</p></div>
+      </div>
+      <div class="gate">
+        <div><h4>The pilot design</h4><ul><li>60 treated stores against 60 matched controls, six weeks</li><li>Primary metric: stock-driven cancellations per 1,000 orders</li><li>Also tracked: second order within 30 days, tickets per 1,000 orders, store satisfaction</li></ul></div>
+        <div><h4>The go/no-go gate</h4><ul><li>Scale if stock-driven cancellations fall by 40% or more</li><li>Guardrails: delivery time no worse than +1 min, median store response under 45 s, checkout conversion not down more than 2%</li><li>About ₹9L is committed before the gate. The other ₹16L is released only if it clears.</li></ul></div>
+      </div>
+    </div>
+
+    <div class="sub">
+      <h3>What could go wrong</h3>
+      <div class="risks">
+        <div class="risk"><b>Stores won’t do it</b><span>The ask is two minutes a day, one tap per item, sorted by money at risk. Reliable stores earn search ranking and a lower commission tier from the ₹2.5L incentive pool.</span></div>
+        <div class="risk"><b>Store checks slow down checkout</b><span>Checks run in parallel with the order, only for items below the threshold, with a 60-second timeout. Unconfirmed items are never charged.</span></div>
+        <div class="risk"><b>Cold start</b><span>Day-one scores use sales velocity and past failures from the order database, so the engine is useful before a single store taps.</span></div>
+        <div class="risk"><b>Gaming</b><span>Scores are weighted by outcomes. A store that says “in stock” and then rejects the order drops a reliability tier.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROMPTS -->
+<section class="sec" id="prompts">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>The prompt journey</h2>
+      <p class="lede">Seven prompts shaped the diagnosis and the product. Each one changed a decision. Open a row to see what was asked, what it surfaced, and what it changed.</p>
+    </div>
+    <div class="journey">
+      <details open><summary><span>Is NOVA CART growing or buying revenue?</span><span class="pill info">Reconcile</span></summary><div class="pb">
+        <div class="pq">“Reconcile the six-month table. Compute net revenue after promotion, the revenue earned per extra rupee of promo, and the acquisition cost per customer who reaches a second order. State every assumption.”</div>
+        <div><h5>What it surfaced</h5><p>Net revenue after promotion fell from ₹12.3L to ₹9.1L. Extra promo earned ₹0.57 per ₹1. A second-order customer costs about ₹502, roughly seven orders of platform revenue to earn back.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>“More acquisition” stopped being a candidate for the lead strategy. The finance head’s framing became the lens.</p></div></div></details>
+      <details><summary><span>How can customers churn without rating us badly?</span><span class="pill info">Hypotheses</span></summary><div class="pb">
+        <div class="pq">“61% of churned customers rated us 4★ or higher. List the failure modes that cause churn without a bad rating, and the data that would falsify each.”</div>
+        <div><h5>What it surfaced</h5><p>Failures that happen before or instead of a delivered order (cancellation, silent substitution, a refund that drags) never reach a rating prompt. The survey ranks availability, delay and price as the main complaints.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>We stopped looking at delivered-order experience and started looking at pre-delivery failure.</p></div></div></details>
+      <details><summary><span>Which single upstream cause explains the most symptoms?</span><span class="pill info">Causal map</span></summary><div class="pb">
+        <div class="pq">“Map every operational number in the brief to a root cause. Which one upstream cause explains the most downstream symptoms? Separate what is reported from what is inferred.”</div>
+        <div><h5>What it surfaced</h5><p>Stale inventory touches unavailable-product cancellations, store rejections, substitutions, 57% of tickets, partner effort and exit risk, and the 19% who search for items nearby stores lack.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>The problem became availability truth, not delivery speed, not promotions, not discovery.</p></div></div></details>
+      <details><summary><span>What does each executive get right and wrong?</span><span class="pill info">Steelman</span></summary><div class="pb">
+        <div class="pq">“Steelman each of the six leaders. For each: the strongest evidence for, what would disprove it, and whether it describes a symptom, an amplifier or a root cause.”</div>
+        <div><h5>What it surfaced</h5><p>Marketing is disproved at the margin. Operations is real but mostly downstream. The partner manager is nearest to the cause. The product head’s strategy depends on the same fix.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>It gave us the “who’s right” table, and a way to answer the CEO’s question with one product.</p></div></div></details>
+      <details><summary><span>Which product should be built under ₹25L?</span><span class="pill info">Options</span></summary><div class="pb">
+        <div class="pq">“Generate eight candidate products. Score each on root-cause depth, number of leadership claims resolved, fit with ₹25L and no new infrastructure, time to first impact, and store effort. Kill what fails.”</div>
+        <div><h5>What it surfaced</h5><p>Promo optimisers, ETA tools, support consoles and discovery engines all treat symptoms. The availability layer scored highest while staying inside the constraints.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>We committed to ShelfSure and wrote down what we were deliberately not building.</p></div></div></details>
+      <details><summary><span>How do we keep store effort under two minutes a day?</span><span class="pill info">Design</span></summary><div class="pb">
+        <div class="pq">“Design the confidence model so stores spend at most two minutes a day and customers are never charged for an item that isn’t there. What is the simplest formula, and how does it fail?”</div>
+        <div><h5>What it surfaced</h5><p>Expected sales since the last check plus last known stock gives a defensible probability. Ask stores only where uncertainty × sales × price is highest. Fail safe: if a store doesn’t answer, the item is not promised.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>It defined the engine, the three action bands, the 60-second timeout and the store’s ranked shelf-check list.</p></div></div></details>
+      <details><summary><span>Which assumptions break the business case?</span><span class="pill info">Stress test</span></summary><div class="pb">
+        <div class="pq">“Stress-test the ROI. Which assumptions matter most, and how do we turn them into a pilot with a go/no-go gate?”</div>
+        <div><h5>What it surfaced</h5><p>Repeat-rate recovery and store adoption dominate the result. Both are measurable within six weeks on a matched sample.</p></div>
+        <div class="chg-line"><h5>What it changed</h5><p>Assumptions became sliders, the pilot gets a hard 40% threshold, and only about ₹9L is committed before it.</p></div></div></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="chain"><span>Evidence</span> → <span>Prompting</span> → <span>Insight</span> → <span>Problem</span> → <span>Product</span> → <span>Functional build</span> → <span>Business impact</span></p>
+    <p class="foot" style="margin-top:14px">ShelfSure is a prototype for the fictional NOVA CART. All baselines come from the challenge brief. Store, item and order data in the demo are illustrative. Modelled impact depends on stated assumptions and would be validated in the pilot.</p>
+  </div>
+</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
+const lakh = n => "₹" + (n / 1e5).toFixed(2) + "L";
+const lakh1 = n => "₹" + (n / 1e5).toFixed(1) + "L";
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pct = p => Math.round(p * 100) + "%";
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 3200);
+}
+
+/* ---------- case data (from the brief) ---------- */
+const M = [
+  { k: "Registered users", a: 82000, b: 120000, t: "n", up: 1 },
+  { k: "Monthly active users", a: 39000, b: 46000, t: "n", up: 1 },
+  { k: "Monthly orders", a: 31200, b: 38500, t: "n", up: 1 },
+  { k: "Average order value", a: 452, b: 486, t: "r", up: 1 },
+  { k: "Revenue per month", a: 21.8, b: 26.1, t: "l", up: 1 },
+  { sep: "Quality of that growth" },
+  { k: "Repeat purchase rate", a: 41, b: 27, t: "p", up: 1 },
+  { k: "Average delivery time", a: 29, b: 37, t: "m", up: 0 },
+  { k: "Order cancellation rate", a: 6, b: 11, t: "p", up: 0 },
+  { k: "Support tickets per month", a: 3100, b: 5900, t: "n", up: 0 },
+  { k: "Promotional spend per month", a: 9.5, b: 17, t: "l", up: 0 },
+  { k: "Net revenue after promotion", a: 12.3, b: 9.1, t: "l", up: 1, derived: true }
+];
+const fmtV = (m, v) => ({ n: v.toLocaleString("en-IN"), r: "₹" + v, l: "₹" + v.toFixed(1) + "L", p: v + "%", m: v + " min" }[m.t]);
+function chgHtml(m) {
+  let txt;
+  if (m.t === "p" || m.t === "m") { const d = m.b - m.a; txt = (d > 0 ? "+" : "−") + Math.abs(d) + (m.t === "p" ? " pts" : " min"); }
+  else { const d = (m.b - m.a) / m.a * 100; txt = (d > 0 ? "+" : "−") + Math.abs(d).toFixed(0) + "%"; }
+  const good = (m.b > m.a) === !!m.up;
+  return `<span class="chg ${good ? "g" : "b"}">${txt}</span>`;
+}
+
+function renderCase() {
+  // ledger
+  let h = `<thead><tr><th>Metric</th><th>Six months ago</th><th>Now</th><th>Change</th></tr></thead><tbody>`;
+  M.forEach(m => {
+    if (m.sep) { h += `<tr class="sep"><td colspan="4">${m.sep}</td></tr>`; return; }
+    h += `<tr class="${m.derived ? "derived" : ""}"><td>${m.k}</td><td>${fmtV(m, m.a)}</td><td>${fmtV(m, m.b)}</td><td>${chgHtml(m)}</td></tr>`;
+  });
+  $("#ledger").innerHTML = h + "</tbody>";
+
+  // derived stats
+  const marg = (26.1 - 21.8) / (17 - 9.5);
+  const shareA = 9.5 / 21.8, shareB = 17 / 26.1;
+  const newSignups = (120000 - 82000) / 6;
+  const acq = 0.58 * 17e5;
+  const secondCust = newSignups * 0.31;
+  const cacSecond = acq / secondCust, cacSignup = acq / newSignups, cacFirst = acq / (newSignups * 0.54);
+  const rpo = 26.1e5 / 38500;
+  $("#bigstats").innerHTML = `
+    <div class="bigstat"><b>₹${marg.toFixed(2)}</b><p>Revenue earned per extra ₹1 of promotion since six months ago: ₹4.3L more revenue for ₹7.5L more promo spend.</p></div>
+    <div class="bigstat"><b>${Math.round(shareB * 100)}%</b><p>of revenue now goes back out as promotion, up from ${Math.round(shareA * 100)}%.</p></div>
+    <div class="bigstat"><b>${inr(cacSecond)}</b><p>Estimated acquisition spend per new customer who places a second order. At ${inr(rpo)} of platform revenue per order, that takes about ${(cacSecond / rpo).toFixed(0)} orders to earn back.</p></div>`;
+  $("#bigfoot").textContent = "Estimates assume registered-user growth equals new sign-ups (38,000 in six months, about 6,300 a month), that 58% of the ₹17L promotional budget goes to acquisition, and that 31% of sign-ups place a second order within 30 days. Platform revenue per order is ₹26.1L ÷ 38,500.";
+
+  // funnel
+  const steps = [
+    { l: "Sign up", v: 100, w: 60, t: inr(cacSignup) + " spent per sign-up" },
+    { l: "Place a first order", v: 54, w: 54 * .6, t: inr(cacFirst) + " per first-order customer" },
+    { l: "Second order within 30 days", v: 31, w: 31 * .6, t: inr(cacSecond) + " per repeat customer" },
+    { l: "Of customers who reach order three", v: 72, w: 72 * .6, t: "order again next month", hot: 1 }
+  ];
+  $("#funnel").innerHTML = steps.map(s => `<div class="fstep"><div class="lab">${s.l}</div><div style="display:flex;align-items:center;gap:12px"><div class="fbar ${s.hot ? "hot" : ""}" style="width:${s.w}%"><b>${s.v}%</b></div><span class="small muted">${s.t}</span></div></div>`).join("");
+
+  // cascade
+  const orders = 38500, canc = orders * .11;
+  const rows = [
+    { n: Math.round(canc * .35).toLocaleString("en-IN"), u: "orders a month", t: "<em>Cancelled because the product wasn’t there.</em> 35% of all cancellations, the largest single reason.", tag: ["Reported", "ok"] },
+    { n: Math.round(canc * .18).toLocaleString("en-IN"), u: "orders a month", t: "<em>Rejected by the store.</em> Partly busy-hour capacity, partly “we don’t have it”. We count half as stock-related.", tag: ["Reported and inferred", "warn"] },
+    { n: Math.round(orders * .08).toLocaleString("en-IN"), u: "orders a month", t: "<em>Contain a substituted item</em> the customer didn’t choose. Each one is a delay and a gamble on trust.", tag: ["Reported", "ok"] },
+    { n: Math.round(5900 * .57).toLocaleString("en-IN"), u: "of 5,900 tickets", t: "<em>Refund status, missing items and wrong orders</em> (29% + 19% + 9%): the aftermath of an order that went wrong. Average resolution is 9.2 hours.", tag: ["Reported", "ok"] },
+    { n: "27%", u: "of cancellations", t: "<em>Customers give up on delay.</em> Re-picking, rejection and substitution add minutes before pickup, so part of the delay problem is downstream of stock. 13% of orders arrive 15+ minutes late.", tag: ["Inferred", "info"] },
+    { n: "~112", u: "stores may leave", t: "<em>Partners absorb the blame.</em> 39% say upkeep isn’t worth the effort, 18% are considering leaving, and customers blame the store when the app is wrong.", tag: ["Reported", "ok"] },
+    { n: "19%", u: "of customers", t: "<em>Search repeatedly for items no nearby store lists.</em> That is local demand the network could serve if stores could see it.", tag: ["Reported", "ok"] }
+  ];
+  $("#casc").innerHTML = rows.map(r => `<div class="crow"><b>${r.n}<small>${r.u}</small></b><p>${r.t}</p><span class="pill ${r.tag[1]}">${r.tag[0]}</span></div>`).join("");
+
+  // execs
+  const E = [
+    { n: "CEO", q: "We need to improve customer retention.", v: ["Right goal, not a cause", "info"], b: ["Repeat purchase fell from 41% to 27%, and customers who reach three orders return 72% of the time. Retention is the outcome that matters.", "It doesn’t say why people don’t come back. ShelfSure is a lever on the why."] },
+    { n: "Marketing head", q: "We need stronger acquisition and better promotions.", v: ["Disproved at the margin", "bad"], b: ["Extra promo earned ₹0.57 per ₹1. Discount-acquired users retain worse, and 44% of coupons are never redeemed.", "More sign-ups into a catalogue where 29% of customers have seen “available” turn unavailable means more disappointed first orders. A 30% budget increase would multiply the leak."] },
+    { n: "Operations head", q: "Delivery reliability is damaging the experience.", v: ["Real, but mostly downstream", "warn"], b: ["Delivery partner unavailability explains 12% of cancellations. Product unavailable plus store rejections explain 53%.", "Substitution and re-picking add minutes before the rider is even dispatched. We expect delivery time to improve as a side effect, and the pilot will test that rather than assume it."] },
+    { n: "Partner manager", q: "Inventory accuracy and store experience are the real bottlenecks.", v: ["Nearest to the root cause", "ok"], b: ["It matches the 35% unavailable cancellations, the 29% of customers who saw “available” become unavailable, the 39% of stores who find upkeep too heavy, and the 18% considering leaving.", "The missing piece is a solution that cuts store effort rather than adding to it."] },
+    { n: "Product head", q: "We’re treating ourselves like another delivery app.", v: ["The strategy, needs the foundation", "info"], b: ["Local long-tail products are the moat. But long-tail items are exactly the ones with the stalest stock data, so the moat can’t work until availability is trustworthy.", "Customers who shop across several store types repeat more, which is the behaviour a trusted multi-store basket encourages."] },
+    { n: "Finance head", q: "Our problem isn’t growth. It’s the quality and cost of that growth.", v: ["Right diagnosis", "ok"], b: ["Net revenue after promotion fell 26% while revenue rose 20%.", "ShelfSure raises quality without more promotional spend, and the model shows payback against the ₹25L budget."] }
+  ];
+  $("#execs").innerHTML = E.map(e => `<details><summary><b>${e.n}</b><q>${e.q}</q><span class="pill ${e.v[1]}">${e.v[0]}</span></summary><div class="body">${e.b.map(x => `<p>${x}</p>`).join("")}</div></details>`).join("");
+
+  // matrix
+  const cols = ["Root-cause depth", "Leadership claims resolved", "Fits ₹25L, no new infrastructure", "Impact within 90 days", "Low store effort"];
+  const P = [
+    ["Smarter promo and acquisition engine", [1, 2, 5, 4, 5]],
+    ["Delivery ETA and dispatch optimiser", [2, 2, 3, 3, 5]],
+    ["Unified support and refund console", [1, 2, 4, 4, 5]],
+    ["Local discovery and recommendations", [2, 2, 4, 3, 5]],
+    ["ShelfSure: availability trust layer", [5, 5, 4, 4, 3]]
+  ];
+  const dots = n => "●".repeat(n) + "○".repeat(5 - n);
+  $("#matrix").innerHTML = `<thead><tr><th>Candidate product</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>Total</th></tr></thead><tbody>` +
+    P.map((p, i) => `<tr class="${i === P.length - 1 ? "win" : ""}"><td>${p[0]}</td>${p[1].map(s => `<td class="dots" aria-label="${s} of 5">${dots(s)}</td>`).join("")}<td><b>${p[1].reduce((a, b) => a + b, 0)}</b></td></tr>`).join("") + "</tbody>";
+}
+
+/* ---------- hero shelf widget ---------- */
+const HERO = [
+  { n: "Amul Butter 500 g", i: "🧈", real: false, p: 49, a: "ask", s: "Store asked, out, swap offered" },
+  { n: "Aashirvaad Atta 5 kg", i: "🌾", real: true, p: 97, a: "ok", s: "Confirmed" },
+  { n: "Maggi Masala 12-pack", i: "🍜", real: true, p: 72, a: "ask", s: "Store confirms" },
+  { n: "Dolo 650", i: "💊", real: true, p: 95, a: "ok", s: "Confirmed" },
+  { n: "Electral ORS", i: "🧃", real: true, p: 75, a: "ask", s: "Store confirms" },
+  { n: "Cough Syrup 100 ml", i: "🧴", real: false, p: 19, a: "off", s: "Hidden, notify me" }
+];
+let heroMode = "today";
+function renderHero() {
+  $("#tiles").innerHTML = HERO.map(t => {
+    if (heroMode === "today") {
+      return `<div class="tile"><span class="ico">${t.i}</span><b>${t.n}</b><div class="row2"><span class="mini-chip ok">App: in stock</span><span class="mini-chip ${t.real ? "ok" : "bad"}">Shelf: ${t.real ? "in stock" : "empty"}</span></div></div>`;
+    }
+    return `<div class="tile"><span class="ico">${t.i}</span><b>${t.n}</b><div class="row2"><span class="mini-chip ${t.a}">${t.p}% sure</span><span class="mini-chip ${t.a}">${t.s}</span></div></div>`;
+  }).join("");
+  const s = $("#shelf-sum");
+  if (heroMode === "today") { s.className = "shelf-sum bad"; s.textContent = "2 of 6 promises break after the customer has paid. Cancel, refund, support ticket, lost customer."; }
+  else { s.className = "shelf-sum ok"; s.textContent = "0 broken promises. One caught with a single store tap, one never offered, and the customer is asked before paying."; }
+  $$('[data-act="hero-mode"]').forEach(b => b.setAttribute("aria-pressed", b.dataset.m === heroMode ? "true" : "false"));
+}
+
+/* ---------- live demo: data ---------- */
+const STORES = [
+  { id: "s1", name: "Sharma Kirana", type: "Grocery", dist: "0.4 km" },
+  { id: "s2", name: "Baker’s Basket", type: "Bakery", dist: "0.7 km" },
+  { id: "s3", name: "CarePlus Pharmacy", type: "Pharmacy", dist: "0.9 km" }
+];
+const ITEMS0 = [
+  { id: "butter500", store: "s1", name: "Amul Butter 500 g", ico: "🧈", price: 285, qty: 2, age: 310, vel: 9, hist: .12, grp: "butter" },
+  { id: "butter200", store: "s1", name: "Britannia Butter 200 g", ico: "🧈", price: 118, qty: 9, age: 60, vel: 4, hist: .02, grp: "butter" },
+  { id: "atta", store: "s1", name: "Aashirvaad Atta 5 kg", ico: "🌾", price: 265, qty: 14, age: 95, vel: 6, hist: .03 },
+  { id: "dal", store: "s1", name: "Toor Dal 1 kg", ico: "🥣", price: 165, qty: 6, age: 180, vel: 5, hist: .05 },
+  { id: "maggi", store: "s1", name: "Maggi Masala 12-pack", ico: "🍜", price: 168, qty: 3, age: 260, vel: 8, hist: .09 },
+  { id: "oil", store: "s1", name: "Sunflower Oil 1 L", ico: "🛢️", price: 155, qty: 0, age: 40, vel: 4, hist: .10 },
+  { id: "salt", store: "s1", name: "Tata Salt 1 kg", ico: "🧂", price: 28, qty: 20, age: 600, vel: 12, hist: .02 },
+  { id: "bread", store: "s2", name: "Multigrain Bread", ico: "🍞", price: 55, qty: 8, age: 20, vel: 30, hist: .06 },
+  { id: "cake", store: "s2", name: "Eggless Chocolate Cake 500 g", ico: "🎂", price: 420, qty: 1, age: 240, vel: 3, hist: .15, grp: "cake" },
+  { id: "pastry", store: "s2", name: "Chocolate Truffle Pastry", ico: "🍰", price: 85, qty: 7, age: 70, vel: 5, hist: .04, grp: "cake" },
+  { id: "puff", store: "s2", name: "Veg Puff", ico: "🥟", price: 30, qty: 12, age: 15, vel: 40, hist: .04, grp: "snack" },
+  { id: "croissant", store: "s2", name: "Butter Croissant", ico: "🥐", price: 70, qty: 2, age: 420, vel: 14, hist: .10, grp: "snack" },
+  { id: "garlic", store: "s2", name: "Garlic Bread", ico: "🥖", price: 80, qty: 0, age: 30, vel: 6, hist: .08, grp: "snack" },
+  { id: "dolo", store: "s3", name: "Dolo 650, 15 tablets", ico: "💊", price: 32, qty: 25, age: 700, vel: 10, hist: .04 },
+  { id: "ors", store: "s3", name: "Electral ORS Sachet", ico: "🧃", price: 21, qty: 4, age: 380, vel: 7, hist: .08 },
+  { id: "thermo", store: "s3", name: "Digital Thermometer", ico: "🌡️", price: 180, qty: 3, age: 900, vel: 1.2, hist: .02 },
+  { id: "vitc", store: "s3", name: "Vitamin C 500 mg", ico: "🍊", price: 115, qty: 2, age: 1000, vel: 2, hist: .06 },
+  { id: "cough", store: "s3", name: "Cough Syrup 100 ml", ico: "🧴", price: 95, qty: 1, age: 1300, vel: 4, hist: .11 }
+];
+const REQ_SECONDS = 60;
+let S;
+const item = id => S.items.find(i => i.id === id);
+const storeOf = id => STORES.find(s => s.id === id);
+
+function initState() {
+  S = {
+    items: ITEMS0.map(i => ({ ...i })),
+    cfg: { tAuto: .80, tHide: .25 },
+    cart: {}, q: "", filter: "all", view: "browse", order: null, reqs: [],
+    storeSel: "s1", storeTab: "check",
+    metrics: { orders: 0, auto: 0, pings: 0, caught: 0, swaps: 0 },
+    log: [], rid: 0, oid: 4821,
+    unmet: { "Sugar-free biscuits": 38, "Jaggery powder": 27, "Gluten-free atta": 21, "Cold-pressed groundnut oil": 16 }
+  };
+  S.baseCert = catCert();
+  log("Session started. Scores computed for 18 items across 3 stores from sales velocity, last check and past failures.");
+}
+
+/* ---------- the confidence engine ---------- */
+function assess(it) {
+  const exp = it.vel * (it.age / 1440);                 // expected sales since the last check (walk-in and online)
+  const stale = Math.min(1, it.age / 240);               // past failures matter less right after a check
+  let p = it.qty <= 0 ? 0.02 : 1 - Math.exp(-it.qty / (exp + 0.5));
+  p = clamp(p * (1 - it.hist * stale), 0.01, 0.99);
+  const action = p >= S.cfg.tAuto ? "auto" : (p >= S.cfg.tHide ? "ping" : "hide");
+  return { p, exp, action, cert: Math.max(p, 1 - p) };
+}
+function ageStr(m) {
+  if (m < 2) return "just now";
+  if (m < 60) return Math.round(m) + " min ago";
+  if (m < 1440) { const h = m / 60; return (h < 10 ? h.toFixed(1).replace(".0", "") : Math.round(h)) + " h ago"; }
+  return Math.round(m / 1440) + " d ago";
+}
+function whyText(it) {
+  const a = assess(it);
+  return `Sells about ${it.vel}/day, last checked ${ageStr(it.age)}, roughly ${a.exp.toFixed(1)} sold since, ${it.qty} on the last count.`;
+}
+function wCert(items) {
+  const w = items.reduce((s, i) => s + i.vel, 0);
+  return items.reduce((s, i) => s + i.vel * assess(i).cert, 0) / w;
+}
+const catCert = () => wCert(S.items);
+function log(txt) { S.log.unshift({ t: new Date().toTimeString().slice(0, 8), txt }); if (S.log.length > 40) S.log.pop(); }
+const fmtSec = s => Math.floor(s / 60) + ":" + String(Math.max(0, s) % 60).padStart(2, "0");
+
+/* ---------- customer logic ---------- */
+const cartCount = () => Object.values(S.cart).reduce((a, b) => a + b, 0);
+const cartTotal = () => Object.entries(S.cart).reduce((s, [id, q]) => s + item(id).price * q, 0);
+function findSub(it) {
+  if (!it.grp) return null;
+  return S.items.filter(x => x.id !== it.id && x.grp === it.grp && assess(x).action === "auto")
+    .sort((a, b) => (a.store === it.store ? 0 : 1) - (b.store === it.store ? 0 : 1) || Math.abs(a.price - it.price) - Math.abs(b.price - it.price))[0] || null;
+}
+function markOut(ln) {
+  const it = item(ln.id);
+  S.metrics.caught++;
+  const sub = findSub(it);
+  if (sub) { ln.status = "swap"; ln.sub = sub.id; log(`${it.name} is out. Proposed swap: ${sub.name} (${pct(assess(sub).p)} sure). Customer not charged.`); }
+  else { ln.status = "removed"; log(`${it.name} is out and has no confident substitute. Removed before payment.`); }
+}
+function placeOrder() {
+  const entries = Object.entries(S.cart).filter(([, q]) => q > 0);
+  if (!entries.length) return;
+  const o = { id: "NC" + (S.oid++), lines: [], stage: "checking" };
+  entries.forEach(([id, q]) => {
+    const it = item(id), a = assess(it);
+    const ln = { id, qty: q, status: "confirmed", by: "auto", sub: null };
+    if (a.action === "auto") {
+      S.metrics.auto++;
+      log(`${it.name}: ${pct(a.p)} sure. Confirmed instantly, no wait.`);
+    } else if (a.action === "ping") {
+      ln.status = "pending"; ln.by = "store"; ln.rid = ++S.rid;
+      S.reqs.push({ rid: ln.rid, oid: o.id, itemId: id, qty: q, left: REQ_SECONDS, total: REQ_SECONDS, done: false });
+      S.metrics.pings++;
+      log(`${it.name}: only ${pct(a.p)} sure. One-tap check sent to ${storeOf(it.store).name}. ${whyText(it)}`);
+    } else {
+      markOut(ln);
+    }
+    o.lines.push(ln);
+  });
+  S.order = o; S.cart = {}; S.view = "track"; S.metrics.orders++;
+  const pend = S.reqs.find(r => !r.done && r.oid === o.id);
+  if (pend) {
+    S.storeSel = item(pend.itemId).store; S.storeTab = "orders";
+    if (window.matchMedia("(max-width:1179px)").matches) toast("Sent to the store. Switch to the Store tab to answer.");
+  }
+  finishCheck();
+  renderAll();
+}
+function resolveRequest(rid, ans) {
+  const r = S.reqs.find(x => x.rid === rid);
+  if (!r || r.done) return;
+  r.done = true; r.ans = ans;
+  const o = S.order, ln = o && o.lines.find(l => l.rid === rid), it = item(r.itemId), st = storeOf(it.store).name;
+  const before = assess(it).cert, took = REQ_SECONDS - r.left;
+  if (ans === "have") {
+    it.qty = Math.max(it.qty, r.qty + 2); it.age = 0;
+    if (ln) ln.status = "confirmed";
+    log(`${st} confirmed ${it.name} in ${took}s. Certainty ${pct(before)} to ${pct(assess(it).cert)}, refreshed for every customer.`);
+  } else {
+    it.qty = 0; it.age = 0;
+    log(ans === "timeout" ? `No answer from ${st} in ${REQ_SECONDS}s. ${it.name} is not promised, so the customer is protected.` : `${st} reported ${it.name} out in ${took}s. Catalogue updated for every customer.`);
+    if (ln) markOut(ln);
+  }
+  finishCheck(); renderAll();
+}
+function swapAnswer(idx, accept) {
+  const ln = S.order && S.order.lines[idx];
+  if (!ln || ln.status !== "swap") return;
+  if (accept) { ln.status = "swapped"; S.metrics.swaps++; log(`Customer accepted the swap to ${item(ln.sub).name}.`); }
+  else { ln.status = "removed"; log(`Customer removed ${item(ln.id).name}. Not charged.`); }
+  finishCheck(); renderAll();
+}
+function finishCheck() {
+  const o = S.order;
+  if (!o || o.stage !== "checking") return;
+  if (o.lines.some(l => l.status === "pending" || l.status === "swap")) return;
+  o.stage = "done"; o.total = 0;
+  o.lines.forEach(l => {
+    if (l.status === "confirmed") o.total += item(l.id).price * l.qty;
+    else if (l.status === "swapped") o.total += item(l.sub).price * l.qty;
+  });
+  o.delivery = o.total > 0 ? 25 : 0; o.charged = o.total + o.delivery;
+  log(`Order ${o.id} confirmed. Charged ${inr(o.charged)} for confirmed items only.`);
+}
+function shelfAnswer(id, a) {
+  const it = item(id), before = assess(it).cert;
+  it.qty = a === "in" ? Math.max(it.qty, 6) : a === "low" ? 2 : 0; it.age = 0;
+  log(`${storeOf(it.store).name} shelf check: ${it.name} marked ${a === "in" ? "in stock" : a === "low" ? "low" : "out"}. Certainty ${pct(before)} to ${pct(assess(it).cert)}.`);
+  renderAll();
+}
+function tick() {
+  const expired = [];
+  S.reqs.forEach(r => { if (!r.done) { r.left -= 1; if (r.left <= 0) expired.push(r.rid); } });
+  expired.forEach(id => resolveRequest(id, "timeout"));
+  if (!expired.length) {
+    $$("[data-count]").forEach(el => { const r = S.reqs.find(x => x.rid == el.dataset.count); if (r && !r.done) el.textContent = fmtSec(r.left); });
+    $$("[data-cbar]").forEach(el => { const r = S.reqs.find(x => x.rid == el.dataset.cbar); if (r && !r.done) el.style.width = (r.left / r.total * 100) + "%"; });
+  }
+}
+
+/* ---------- customer UI ---------- */
+function chipFor(it) {
+  const a = assess(it);
+  if (a.action === "auto") return `<span class="chip ok">${it.age <= 45 ? "Confirmed " + ageStr(it.age) : "In stock"}, ${pct(a.p)} sure</span>`;
+  if (a.action === "ping") return `<span class="chip ask">${pct(a.p)} sure. Store confirms after you order</span>`;
+  return `<span class="chip off">Out of stock nearby</span>`;
+}
+function rowHTML(it) {
+  const a = assess(it), n = S.cart[it.id] || 0;
+  let ctl;
+  if (a.action === "hide") ctl = `<button class="mini" data-act="notify" data-id="${it.id}">Notify me</button>`;
+  else if (n) ctl = `<div class="stepper"><button data-act="sub" data-id="${it.id}" aria-label="Remove one ${esc(it.name)}">−</button><b>${n}</b><button data-act="add" data-id="${it.id}" aria-label="Add one ${esc(it.name)}">+</button></div>`;
+  else ctl = `<button class="mini add" data-act="add" data-id="${it.id}">Add</button>`;
+  return `<div class="row ${a.action === "hide" ? "dim" : ""}"><span class="ico">${it.ico}</span><div><div class="nm">${it.name}</div>${chipFor(it)}</div><div><div class="px">${inr(it.price)}</div>${ctl}</div></div>`;
+}
+function custListHTML() {
+  const q = S.q.trim().toLowerCase();
+  const rank = { auto: 0, ping: 1, hide: 2 };
+  let h = "", any = false;
+  STORES.forEach(st => {
+    if (S.filter !== "all" && S.filter !== st.id) return;
+    const list = S.items.filter(i => i.store === st.id && (!q || (i.name + " " + st.name + " " + st.type + " " + (i.grp || "")).toLowerCase().includes(q)))
+      .sort((a, b) => rank[assess(a).action] - rank[assess(b).action]);
+    if (!list.length) return;
+    any = true;
+    h += `<div class="grp"><span>${st.name}</span><span>${st.dist}</span></div>` + list.map(rowHTML).join("");
+  });
+  if (!any) h = `<div class="empty"><b>No nearby store lists “${esc(S.q)}”.</b>Tell us and we’ll ask stores to stock it.<br><button class="mini add" style="margin-top:10px" data-act="notify-q">Notify me</button></div>`;
+  return h;
+}
+function custBrowse() {
+  const n = cartCount();
+  return `<div class="shead"><div class="where">Delivering to <b>Home</b>, 3 stores within 1 km</div>
+    <input id="q" class="search" type="search" placeholder="Search butter, bread, ORS" value="${esc(S.q)}" aria-label="Search items" autocomplete="off">
+    <div class="fchips"><button class="fchip" data-act="filter" data-f="all" aria-pressed="${S.filter === "all"}">All stores</button>${STORES.map(s => `<button class="fchip" data-act="filter" data-f="${s.id}" aria-pressed="${S.filter === s.id}">${s.type}</button>`).join("")}</div></div>
+    <div class="sbody" id="cust-list">${custListHTML()}</div>
+    <div class="sfoot">${n ? `<button class="cartbar" data-act="view-cart"><span>View cart (${n})</span><span>${inr(cartTotal())}</span></button>` : `<button class="cartbar" disabled><span>Your cart is empty</span></button>`}</div>`;
+}
+function custCart() {
+  const entries = Object.entries(S.cart).filter(([, q]) => q > 0);
+  const total = cartTotal();
+  const pings = entries.filter(([id]) => assess(item(id)).action === "ping").length;
+  let body;
+  if (!entries.length) body = `<div class="empty"><b>Your cart is empty</b>Go back and add something.</div>`;
+  else {
+    body = entries.map(([id, q]) => { const it = item(id); return `<div class="row"><span class="ico">${it.ico}</span><div><div class="nm">${it.name}</div>${chipFor(it)}<div class="small muted">${storeOf(it.store).name}</div></div><div><div class="px">${inr(it.price * q)}</div><div class="stepper"><button data-act="sub" data-id="${id}" aria-label="Remove one">−</button><b>${q}</b><button data-act="add" data-id="${id}" aria-label="Add one">+</button></div></div></div>`; }).join("") +
+      (pings ? `<div class="panel ask"><b>${pings} item${pings > 1 ? "s" : ""} need a quick store check</b>The store answers in about a minute while we confirm the rest. Anything it can’t confirm is swapped or removed, and you’re only charged for what’s confirmed.</div>`
+        : `<div class="panel ok"><b>Everything is confirmed</b>No waiting. Your order goes straight to packing.</div>`) +
+      `<div class="sumrow"><span>Items</span><span>${inr(total)}</span></div><div class="sumrow"><span>Delivery, one fee for all stores</span><span>${inr(25)}</span></div><div class="sumrow tot"><span>Total if everything is confirmed</span><span>${inr(total + 25)}</span></div>`;
+  }
+  return `<div class="shead"><button class="back" data-act="back">‹ Keep shopping</button><h4>Your cart</h4></div><div class="sbody">${body}</div>
+    <div class="sfoot">${entries.length ? `<button class="cartbar" data-act="place"><span>Place order</span><span>${inr(total + 25)}</span></button>` : `<button class="cartbar" disabled><span>Place order</span></button>`}</div>`;
+}
+function custTrack() {
+  const o = S.order;
+  const lines = o.lines.map((l, i) => {
+    const it = item(l.id);
+    let dot, txt;
+    if (l.status === "confirmed") { dot = `<span class="dot ok">✓</span>`; txt = `<b>${it.name}</b><br><span class="muted">${l.by === "auto" ? "Confirmed instantly" : "Confirmed by " + storeOf(it.store).name}</span>`; }
+    else if (l.status === "pending") {
+      const r = S.reqs.find(x => x.rid === l.rid);
+      dot = `<span class="dot wait">…</span>`;
+      txt = `<b>${it.name}</b><br><span class="muted">${storeOf(it.store).name} is checking the shelf. Auto-release in <b data-count="${l.rid}">${fmtSec(r.left)}</b></span><div class="bar"><i data-cbar="${l.rid}" style="width:${r.left / r.total * 100}%"></i></div>`;
+    } else if (l.status === "swap") {
+      const sb = item(l.sub), diff = (sb.price - it.price) * l.qty;
+      dot = `<span class="dot bad">✕</span>`;
+      txt = `<b>${it.name}</b><br><span class="muted">Out of stock. You haven’t been charged.</span>
+        <div class="swap"><b>Swap for ${sb.name}?</b><div class="small">${inr(sb.price)} each, ${pct(assess(sb).p)} sure, from ${storeOf(sb.store).name}. ${diff <= 0 ? "You save " + inr(-diff) : "That’s " + inr(diff) + " more"}.</div>
+        <div class="acts"><button class="mini go" data-act="swap" data-i="${i}" data-y="1">Swap it</button><button class="mini" data-act="swap" data-i="${i}" data-y="0">Remove it</button></div></div>`;
+    } else if (l.status === "swapped") { const sb = item(l.sub); dot = `<span class="dot sw">↔</span>`; txt = `<b>${sb.name}</b><br><span class="muted">Swapped in for ${it.name}</span>`; }
+    else { dot = `<span class="dot rm">–</span>`; txt = `<b>${it.name}</b><br><span class="muted">Removed. You’re not charged for it.</span>`; }
+    return `<div class="step">${dot}<div>${txt}</div></div>`;
+  }).join("");
+  let foot = "";
+  if (o.stage === "checking") {
+    const n = o.lines.filter(l => l.status === "pending" || l.status === "swap").length;
+    foot = `<div class="panel info"><b>Confirming ${n} item${n > 1 ? "s" : ""}</b>Everything else is already confirmed. Nothing is charged until this finishes.</div>`;
+  } else {
+    const hadOut = o.lines.some(l => l.sub || l.status === "removed");
+    foot = o.total > 0
+      ? `<div class="panel ok"><b>Order ${o.id} confirmed. Arriving in about 24 min.</b>You pay ${inr(o.charged)}, for confirmed items only.</div>`
+      : `<div class="panel bad"><b>Order ${o.id} cancelled before payment</b>Nothing was charged.</div>`;
+    if (hadOut) foot += `<div class="panel bad"><b>What today’s app would have done</b>Accepted and charged first, then found the item missing: a cancellation or a swap you never chose, then a refund ticket that takes 9.2 hours on average to resolve.</div>`;
+    foot += `<button class="cartbar" data-act="new-order"><span>Start a new order</span></button>`;
+  }
+  return `<div class="shead"><h4>Order ${o.id}</h4></div><div class="sbody">${lines}${foot}</div>`;
+}
+function renderCust() {
+  const el = $("#cust"); if (!el) return;
+  const body = S.view === "browse" ? custBrowse() : S.view === "cart" ? custCart() : custTrack();
+  el.innerHTML = `<div class="sbar"><span>9:41</span><span>NOVA CART</span></div>` + body;
+}
+
+/* ---------- store UI ---------- */
+function tierOf(c) { return c >= .95 ? ["Gold", "ok"] : c >= .88 ? ["Silver", "info"] : ["Needs a shelf check", "warn"]; }
+function shelfQueue(sid) {
+  return S.items.filter(i => i.store === sid && i.age > 15).map(i => ({ i, a: assess(i) })).filter(x => x.a.cert < .93)
+    .sort((x, y) => (1 - y.a.cert) * y.i.vel * y.i.price - (1 - x.a.cert) * x.i.vel * x.i.price).slice(0, 4);
+}
+function renderStore() {
+  const el = $("#store"); if (!el) return;
+  const st = storeOf(S.storeSel), its = S.items.filter(i => i.store === st.id), c = wCert(its);
+  const mine = S.reqs.filter(r => !r.done && item(r.itemId).store === st.id);
+  const other = S.reqs.filter(r => !r.done && item(r.itemId).store !== st.id).length;
+  let tab = "";
+  if (S.storeTab === "orders") {
+    tab = mine.map(r => { const it = item(r.itemId); return `<div class="req new"><h5>Do you have ${r.qty} × ${it.name}?</h5><p class="why">Order ${r.oid}. ${whyText(it)}</p>
+      <div class="small" style="display:flex;justify-content:space-between"><span>Auto-release in</span><b data-count="${r.rid}">${fmtSec(r.left)}</b></div><div class="bar"><i data-cbar="${r.rid}" style="width:${r.left / r.total * 100}%"></i></div>
+      <div class="btn2" style="margin-top:10px"><button class="yes" data-act="ans" data-rid="${r.rid}" data-a="have">Have it</button><button class="no" data-act="ans" data-rid="${r.rid}" data-a="out">Out of stock</button></div></div>`; }).join("");
+    if (other) tab += `<div class="panel info">${other} question${other > 1 ? "s are" : " is"} waiting at another store.</div>`;
+    if (!mine.length) tab += `<div class="empty"><b>No questions right now</b>When a customer orders something we’re unsure about, you’ll get a one-tap question here instead of a failed order.<br><br>${S.metrics.auto} item${S.metrics.auto === 1 ? "" : "s"} confirmed instantly and ${S.metrics.pings} question${S.metrics.pings === 1 ? "" : "s"} asked in this session.</div>`;
+  } else if (S.storeTab === "check") {
+    const q = shelfQueue(st.id);
+    tab = `<p class="small muted" style="padding:10px 0 0">Your two-minute check: the items where being wrong costs the most, most important first.</p>`;
+    if (!q.length) tab += `<div class="panel ok" style="margin-top:14px"><b>All checked. Nice work.</b>Your shelf is verified, so customers see accurate stock. We’ll ask again in a few hours.</div>`;
+    else tab += q.map(({ i, a }) => `<div class="shc"><h5>${i.ico} ${i.name}</h5><p class="why">${i.qty === 0 ? `Marked out ${ageStr(i.age)}. Back in stock?` : `Last checked ${ageStr(i.age)}, ${i.qty} on the last count. Sells about ${i.vel}/day, so we’re ${pct(a.p)} sure it’s on the shelf.`}</p>
+      <div class="btn2"><button class="yes" data-act="shelf" data-id="${i.id}" data-a="in">In stock</button><button data-act="shelf" data-id="${i.id}" data-a="low">Low</button><button class="no" data-act="shelf" data-id="${i.id}" data-a="out">Out</button></div></div>`).join("");
+  } else {
+    const [tn, tc] = tierOf(c);
+    const um = Object.entries(S.unmet).sort((a, b) => b[1] - a[1]);
+    tab = `<div class="panel ${tc === "ok" ? "ok" : tc === "info" ? "info" : "ask"}" style="margin-top:12px"><b>Reliability tier: ${tn}</b>Gold stores rank higher in search and unlock a lower commission tier. Your tier moves with how accurate your shelf data is.</div>
+      <h5 style="margin:14px 0 4px;font-family:var(--display)">Demand you’re missing</h5><p class="small muted">Customers near you searched for items no store lists.</p>` +
+      um.map(([n, c2]) => `<div class="ins"><span><b>${esc(n)}</b><br><span class="small muted">${c2} searches this week</span></span><button class="mini" data-act="stock" data-n="${esc(n)}">I can stock this</button></div>`).join("");
+  }
+  const [tn] = tierOf(c);
+  el.innerHTML = `<div class="sbar"><span>9:41</span><span>NOVA Partner</span></div>
+    <div class="storehead"><div class="ring" style="--v:${Math.round(c * 100)}" data-t="${Math.round(c * 100)}%"></div><div><select id="store-sel" aria-label="Choose store">${STORES.map(s => `<option value="${s.id}" ${s.id === st.id ? "selected" : ""}>${s.name}</option>`).join("")}</select><p>Catalogue certainty. ${tn}</p></div></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-act="tab" data-t="orders" aria-selected="${S.storeTab === "orders"}">Questions${mine.length ? `<span class="badge">${mine.length}</span>` : ""}</button>
+      <button role="tab" data-act="tab" data-t="check" aria-selected="${S.storeTab === "check"}">Shelf check</button>
+      <button role="tab" data-act="tab" data-t="insights" aria-selected="${S.storeTab === "insights"}">Insights</button></div>
+    <div class="sbody">${tab}</div>`;
+}
+
+/* ---------- control room ---------- */
+function mountOps() {
+  $("#ops").innerHTML = `
+    <div><h4>Live results <span class="pill ok">This session</span></h4><div class="kpis" id="o-kpi"></div></div>
+    <div id="o-cf"></div>
+    <div><h4>Engine settings</h4>
+      <div class="slider"><label for="cfg-auto">Confirm instantly at or above</label><output id="o-auto"></output><input id="cfg-auto" data-cfg="tAuto" type="range" min="55" max="95" step="1"></div>
+      <div class="slider"><label for="cfg-hide">Hide items below</label><output id="o-hide"></output><input id="cfg-hide" data-cfg="tHide" type="range" min="5" max="50" step="1"></div>
+      <p class="small muted" id="o-band"></p></div>
+    <div><h4>Decision log</h4><div class="log" id="o-log"></div></div>
+    <div><h4>Store reliability</h4><div id="o-stores"></div></div>`;
+  $("#cfg-auto").value = Math.round(S.cfg.tAuto * 100);
+  $("#cfg-hide").value = Math.round(S.cfg.tHide * 100);
+}
+function renderOps() {
+  if (!$("#o-kpi")) return;
+  const c = catCert(), m = S.metrics;
+  const T = [[m.orders, "orders placed"], [m.auto, "items confirmed instantly"], [m.pings, "one-tap store checks"], [m.caught, "failures caught before payment", 1], [m.swaps, "swaps accepted"], [Math.round(c * 100) + "%", "catalogue certainty, started at " + Math.round(S.baseCert * 100) + "%"]];
+  $("#o-kpi").innerHTML = T.map(t => `<div class="kpi ${t[2] ? "hl" : ""}"><b>${t[0]}</b><span>${t[1]}</span></div>`).join("");
+  $("#o-cf").innerHTML = m.caught
+    ? `<div class="cf"><b>Today’s flow, same orders:</b> ${m.caught} item${m.caught > 1 ? "s" : ""} accepted and paid for, then found missing. That’s ${m.caught} cancellation or blind swap, plus a refund ticket with a 9.2 hour average resolution.</div>`
+    : `<p class="small muted">Place an order containing an item marked “store confirms” to see what ShelfSure intercepts.</p>`;
+  $("#o-auto").textContent = Math.round(S.cfg.tAuto * 100) + "%";
+  $("#o-hide").textContent = Math.round(S.cfg.tHide * 100) + "%";
+  const cnt = { auto: 0, ping: 0, hide: 0 }, vel = { auto: 0, ping: 0, hide: 0 };
+  S.items.forEach(i => { const a = assess(i).action; cnt[a]++; vel[a] += i.vel; });
+  const totV = vel.auto + vel.ping + vel.hide;
+  $("#o-band").textContent = `Right now ${cnt.auto} items confirm instantly, ${cnt.ping} need a store check and ${cnt.hide} are hidden. About ${Math.round(vel.ping / totV * 100)}% of customer demand would trigger a store check. Raise the threshold and customers are safer but stores get more questions.`;
+  $("#o-log").innerHTML = S.log.slice(0, 14).map(l => `<div><time>${l.t}</time><span>${esc(l.txt)}</span></div>`).join("");
+  $("#o-stores").innerHTML = STORES.map(s => {
+    const cc = wCert(S.items.filter(i => i.store === s.id)), [tn, tc] = tierOf(cc), pend = S.reqs.filter(r => !r.done && item(r.itemId).store === s.id).length;
+    return `<div class="srow"><span><b>${s.name}</b><br><span class="small muted">${Math.round(cc * 100)}% certainty${pend ? ", " + pend + " question waiting" : ""}</span></span><span class="pill ${tc}">${tn}</span></div>`;
+  }).join("");
+}
+function fastForward() {
+  const before = { auto: 0, ping: 0, hide: 0 };
+  S.items.forEach(i => before[assess(i).action]++);
+  S.items.forEach(i => i.age += 120);
+  const after = { auto: 0, ping: 0, hide: 0 };
+  S.items.forEach(i => after[assess(i).action]++);
+  log(`Two hours pass. Confirmed items fell from ${before.auto} to ${after.auto}; items needing a store check rose from ${before.ping} to ${after.ping}. Confidence decays as stock sells.`);
+  toast("Two hours later: confidence has decayed. Try the shelf check to restore it.");
+  renderAll();
+}
+
+/* ---------- render, story, reset ---------- */
+function renderAll() {
+  renderCust(); renderStore(); renderOps();
+  const n = S.reqs.filter(r => !r.done).length;
+  const b = $('[data-act="role"][data-r="store"]'); if (b) b.textContent = "Store" + (n ? " (" + n + ")" : "");
+}
+function setRole(r) { $("#devices").dataset.role = r; $$('[data-act="role"]').forEach(b => b.setAttribute("aria-pressed", b.dataset.r === r ? "true" : "false")); }
+function focusDev(d) { $$(".device").forEach(x => x.classList.toggle("live", x.dataset.dev === d)); if (d) setRole(d); }
+function cap(txt) { const c = $("#caption"); if (!txt) { c.className = "caption idle"; c.textContent = "Try it: add “Amul Butter 500 g” in the customer app. It was last checked five hours ago, so ShelfSure will ask the store."; } else { c.className = "caption"; c.textContent = txt; } }
+let runId = 0;
+function resetDemo() { runId++; initState(); mountOps(); renderAll(); cap(null); focusDev(null); }
+async function playStory() {
+  resetDemo();
+  const my = ++runId;
+  $("#caption").scrollIntoView({ behavior: "smooth", block: "start" });
+  const live = () => { if (my !== runId) throw "stop"; };
+  const say = async (txt, ms, dev) => { live(); cap(txt); focusDev(dev); await sleep(ms); live(); };
+  try {
+    await say("Anita opens NOVA CART and searches for butter for tonight’s dinner.", 1800, "cust");
+    for (const ch of "butter") { S.q += ch; renderCust(); await sleep(140); live(); }
+    await say("ShelfSure shows what it knows. The 200 g pack is confirmed. The 500 g pack was last checked five hours ago and sells about nine a day, so it’s only 49% likely to be on the shelf.", 4600, "cust");
+    S.cart.butter500 = 1; renderCust(); await sleep(700); live();
+    S.q = ""; S.cart.bread = 1; renderCust();
+    await say("She adds the 500 g butter, plus a loaf from the bakery next door. Two stores, one basket, one delivery fee.", 3200, "cust");
+    S.view = "cart"; renderCust();
+    await say("At checkout the promise is explicit: pay only for what’s confirmed. The bread is confirmed already. The butter needs a one-tap check.", 4000, "cust");
+    placeOrder();
+    await say("The store gets a one-tap question, not a failed order. Everything else is already confirmed, so Anita isn’t kept waiting.", 3800, "store");
+    const ln = S.order.lines.find(l => l.rid);
+    resolveRequest(ln.rid, "out");
+    await say("The shelf says: out. Nothing has been charged. ShelfSure offers the best in-stock swap straight away.", 4000, "cust");
+    swapAnswer(S.order.lines.indexOf(ln), true);
+    await say("Anita accepts the swap and the order is confirmed. The control room logs every decision and the reason behind it.", 3600, "ops");
+    cap("The result: no post-payment cancellation, no refund ticket (9.2 hours to resolve), one tap of store effort. And the catalogue now knows the 500 g pack is out, so the next customer never sees it as available. Now try it yourself: add anything marked “store confirms”.");
+    focusDev(null);
+  } catch (e) { if (e !== "stop") console.error(e); }
+}
+
+/* ---------- business impact model ---------- */
+const B = { orders: 38500, aov: 486, rev: 2610000, mau: 46000, stores: 620, tickets: 5900, cancel: .11, rep0: 41, rep1: 27, promo: 1700000, budget: 2500000 };
+B.rpo = B.rev / B.orders;                                   // platform revenue per order
+B.marg = (26.1 - 21.8) / (17 - 9.5);                        // marginal revenue per extra promo rupee
+const RAMP = [.1, .25, .5, .75, .9, 1, 1, 1, 1, 1, 1, 1];
+const SL = [
+  { k: "adopt", l: "Stores using ShelfSure", f: v => v + "%", min: 20, max: 100, step: 5, n: "Share of the 620 stores that adopt the shelf check." },
+  { k: "reduce", l: "Stock-driven cancellations removed", f: v => v + "%", min: 20, max: 90, step: 5, n: "On adopted stores. The pilot gate is 40%." },
+  { k: "recov", l: "Repeat-rate drop recovered", f: v => v + "%", min: 5, max: 60, step: 5, n: "Share of the 14-point fall (41% to 27%) that restored trust wins back." },
+  { k: "opc", l: "Orders per retained customer, per month", f: v => v.toFixed(1), min: 1, max: 3.5, step: .5, n: "Overall the platform averages 0.8 orders per active user." },
+  { k: "partner", l: "Store exits avoided", f: v => v + "%", min: 10, max: 80, step: 5, n: "Of the 18% of stores considering leaving." },
+  { k: "tick", l: "Cost per support ticket", f: v => "₹" + v, min: 30, max: 90, step: 5, n: "An assumption. Replace with finance’s real figure." }
+];
+const PRESETS = {
+  cons: { adopt: 55, reduce: 45, recov: 20, opc: 1.5, partner: 25, tick: 45 },
+  exp: { adopt: 75, reduce: 65, recov: 35, opc: 2, partner: 40, tick: 55 },
+  opt: { adopt: 90, reduce: 75, recov: 45, opc: 2.5, partner: 55, tick: 65 }
+};
+let P = { ...PRESETS.exp }, preset = "exp", discOn = false;
+
+function simulate(p) {
+  const cUn = B.orders * B.cancel * .35, cRej = B.orders * B.cancel * .18;
+  const stockC = cUn + cRej * .5;
+  const a = p.adopt / 100, r = p.reduce / 100;
+  const saved = stockC * a * r, vSaved = saved * B.rpo;
+  const dRep = (B.rep0 - B.rep1) * p.recov / 100 * a;       // percentage points regained
+  const retC = B.mau * dRep / 100, retO = retC * p.opc, vRet = retO * B.rpo;
+  const tix = B.tickets * (.19 + .09 + .29 * .5) * a * r, vTix = tix * p.tick;
+  const atRisk = B.stores * .18, stSaved = atRisk * a * p.partner / 100, vPart = stSaved * (B.rev / B.stores) * .5;
+  const prod = vSaved + vRet + vTix + vPart;
+  const disc = B.promo * .3 * (1 - B.marg);
+  const cumP = [], cumD = []; let cp = 0, cd = 0;
+  RAMP.forEach(rm => { cp += prod * rm; cumP.push(cp); cd += prod * rm + disc; cumD.push(cd); });
+  return { saved, vSaved, dRep, retC, retO, vRet, tix, vTix, atRisk, stSaved, vPart, prod, disc, cumP, cumD,
+    cancelAfter: B.cancel * 100 - saved / B.orders * 100, repAfter: B.rep1 + dRep, tixAfter: B.tickets - tix, riskAfter: atRisk - stSaved, revAfter: B.rev + prod };
+}
+function renderSliders() {
+  $("#sliders").innerHTML = SL.map(s => `<div class="slider"><label for="sl-${s.k}">${s.l}</label><output id="ov-${s.k}">${s.f(P[s.k])}</output><input id="sl-${s.k}" data-sl="${s.k}" type="range" min="${s.min}" max="${s.max}" step="${s.step}" value="${P[s.k]}"><small>${s.n}</small></div>`).join("");
+}
+function renderImpact() {
+  const sv = simulate(P), cum = discOn ? sv.cumD : sv.cumP, c12 = cum[11];
+  let pb = cum.findIndex(v => v >= B.budget); pb = pb < 0 ? null : pb + 1;
+  const run = sv.prod + (discOn ? sv.disc : 0);
+  $("#headnum").innerHTML = `
+    <div><b>+${lakh1(run)}</b><span>per month at run-rate${discOn ? ", including promo discipline" : ""}. ShelfSure alone is +${(sv.prod / B.rev * 100).toFixed(0)}% on today’s ₹26.1L revenue.</span></div>
+    <div><b>${lakh1(c12 - B.budget)}</b><span>${c12 >= B.budget ? "net of the ₹25L budget" : "short of the ₹25L budget"} after 12 months (${(c12 / B.budget).toFixed(1)}× return)</span></div>
+    <div><b>${pb ? "Month " + pb : "After 12 months"}</b><span>payback, with benefits ramping over the first six months</span></div>`;
+  const L = [
+    ["Revenue from cancellations avoided", `${Math.round(sv.saved).toLocaleString("en-IN")} orders a month`, sv.vSaved, ""],
+    ["Revenue from customers who come back", `${Math.round(sv.retC).toLocaleString("en-IN")} extra repeat customers`, sv.vRet, ""],
+    ["Support cost avoided", `${Math.round(sv.tix).toLocaleString("en-IN")} tickets a month`, sv.vTix, "alt"],
+    ["Revenue kept from stores that stay", `${Math.round(sv.stSaved)} stores retained`, sv.vPart, "alt"]
+  ];
+  if (discOn) L.push(["Net loss avoided by holding promo", "the +30% marketing increase", sv.disc, "tg"]);
+  const mx = Math.max(...L.map(x => x[2]));
+  $("#levers").innerHTML = L.map(x => `<div class="lever"><span>${x[0]}<small>${x[1]}</small></span><div class="track"><i class="${x[3]}" style="width:${x[2] / mx * 100}%"></i></div><b>${lakh(x[2])}</b></div>`).join("");
+  drawCum(sv, pb);
+  $("#cumlegend").innerHTML = `<span><i style="background:var(--brand)"></i>ShelfSure</span>` + (discOn ? `<span><i style="background:var(--info)"></i>With promo discipline</span>` : "") + `<span><i style="background:var(--bad)"></i>₹25L budget</span>`;
+  const rows = [
+    ["Order cancellation rate", "11.0%", sv.cancelAfter.toFixed(1) + "%"],
+    ["Repeat purchase rate", "27.0%", sv.repAfter.toFixed(1) + "%"],
+    ["Support tickets per month", B.tickets.toLocaleString("en-IN"), Math.round(sv.tixAfter).toLocaleString("en-IN")],
+    ["Stores considering leaving", Math.round(sv.atRisk) + "", Math.round(sv.riskAfter) + ""],
+    ["Revenue per month", "₹26.1L", lakh1(sv.revAfter)]
+  ];
+  $("#kt").innerHTML = `<thead><tr><th>Metric at run-rate</th><th>Today</th><th>With ShelfSure</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td><b>${r[2]}</b></td></tr>`).join("")}</tbody>`;
+  $("#hero-upside").textContent = lakh1(simulate(PRESETS.exp).prod);
+}
+function drawCum(sv, pb) {
+  const W = 640, H = 270, Lm = 50, R = 14, T = 14, Bm = 30;
+  const maxV = Math.max(sv.cumP[11], discOn ? sv.cumD[11] : 0, B.budget) * 1.08;
+  const x = m => Lm + (W - Lm - R) * (m / 11), y = v => T + (H - T - Bm) * (1 - v / maxV);
+  const raw = maxV / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  let g = "";
+  for (let v = 0; v <= maxV; v += step) g += `<line class="ax" x1="${Lm}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${Lm - 6}" y="${y(v) + 4}" text-anchor="end">₹${Math.round(v / 1e5)}L</text>`;
+  [1, 3, 6, 9, 12].forEach(m => g += `<text x="${x(m - 1)}" y="${H - 8}" text-anchor="middle">M${m}</text>`);
+  const path = arr => arr.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+  g += `<line class="inv" x1="${Lm}" x2="${W - R}" y1="${y(B.budget)}" y2="${y(B.budget)}"/><text x="${W - R}" y="${y(B.budget) - 6}" text-anchor="end" style="fill:var(--bad);font-weight:700">₹25L budget</text>`;
+  g += `<path class="l1" d="${path(sv.cumP)}"/>`;
+  if (discOn) g += `<path class="l2" d="${path(sv.cumD)}"/>`;
+  if (pb) { const arr = discOn ? sv.cumD : sv.cumP; g += `<circle cx="${x(pb - 1)}" cy="${y(arr[pb - 1])}" r="6" fill="var(--tag)" stroke="var(--ink)" stroke-width="2"/><text x="${x(pb - 1)}" y="${y(arr[pb - 1]) - 12}" text-anchor="middle" style="fill:var(--ink);font-weight:700">Payback M${pb}</text>`; }
+  $("#cum").innerHTML = g;
+}
+function renderBudget() {
+  const BUD = [["Shelf-check app and partner dashboard upgrade", 7.5, "#0E7A5A"], ["Confidence engine and data pipeline", 5, "#2D5BD1"], ["Customer app: confidence labels, store check, swaps", 4, "#0F1E3D"], ["Store onboarding: 8 part-time success associates", 4, "#9A5B06"], ["Store reliability incentives", 2.5, "#B4381F"], ["Pilot measurement and analytics", 1, "#0F766E"], ["Contingency", 1, "#64748B"]];
+  $("#budget").innerHTML = BUD.map(b => `<div style="flex:${b[1]};background:${b[2]}" title="${b[0]}">${b[1].toFixed(1)}</div>`).join("");
+  $("#blist").innerHTML = BUD.map(b => `<div><span><i style="background:${b[2]}"></i>${b[0]}</span><b>₹${b[1].toFixed(1)}L</b></div>`).join("") + `<div style="border-bottom:0"><span></span><b>Total ₹25.0L</b></div>`;
+}
+
+/* ---------- events ---------- */
+const H = {
+  story: () => playStory(),
+  reset: () => resetDemo(),
+  ff: () => fastForward(),
+  role: d => setRole(d.r),
+  "hero-mode": d => { heroMode = d.m; renderHero(); },
+  add: d => { const it = item(d.id); if (assess(it).action === "hide") return; S.cart[d.id] = (S.cart[d.id] || 0) + 1; renderCust(); },
+  sub: d => { S.cart[d.id] = Math.max(0, (S.cart[d.id] || 0) - 1); if (!S.cart[d.id]) delete S.cart[d.id]; renderCust(); },
+  filter: d => { S.filter = d.f; renderCust(); },
+  "view-cart": () => { S.view = "cart"; renderCust(); },
+  back: () => { S.view = "browse"; renderCust(); },
+  place: () => placeOrder(),
+  notify: d => { const n = item(d.id).name; S.unmet[n] = (S.unmet[n] || 0) + 1; log(`Demand logged: a customer wants ${n}, which is out nearby.`); toast("Noted. We’ll tell you when " + n + " is back."); renderStore(); renderOps(); },
+  "notify-q": () => { const n = S.q.trim().replace(/^./, c => c.toUpperCase()); S.unmet[n] = (S.unmet[n] || 0) + 1; log(`Unmet demand logged: “${n}” searched, no store lists it. Shown in store Insights.`); toast("Thanks. We’ll ask nearby stores to stock it."); renderStore(); renderOps(); },
+  swap: d => swapAnswer(+d.i, d.y === "1"),
+  "new-order": () => { S.view = "browse"; S.order = null; S.q = ""; renderCust(); },
+  tab: d => { S.storeTab = d.t; renderStore(); },
+  ans: d => resolveRequest(+d.rid, d.a),
+  shelf: d => shelfAnswer(d.id, d.a),
+  stock: d => toast("Noted. We’ll list “" + d.n + "” once you confirm quantity."),
+  preset: d => { preset = d.p; P = { ...PRESETS[d.p] }; $$('[data-act="preset"]').forEach(b => b.classList.toggle("primary", b.dataset.p === d.p)); renderSliders(); renderImpact(); }
+};
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act]");
+  if (!t || !H[t.dataset.act]) return;
+  H[t.dataset.act](t.dataset, t);
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.id === "q") { S.q = t.value; $("#cust-list").innerHTML = custListHTML(); }
+  else if (t.dataset.cfg) {
+    const v = +t.value / 100; S.cfg[t.dataset.cfg] = v;
+    if (S.cfg.tHide >= S.cfg.tAuto) { if (t.dataset.cfg === "tAuto") S.cfg.tHide = Math.max(.05, v - .05); else S.cfg.tAuto = Math.min(.95, v + .05); $("#cfg-auto").value = Math.round(S.cfg.tAuto * 100); $("#cfg-hide").value = Math.round(S.cfg.tHide * 100); }
+    renderCust(); renderStore(); renderOps();
+  } else if (t.dataset.sl) {
+    P[t.dataset.sl] = +t.value; const s = SL.find(x => x.k === t.dataset.sl); $("#ov-" + s.k).textContent = s.f(P[s.k]);
+    $$('[data-act="preset"]').forEach(b => b.classList.remove("primary")); renderImpact();
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "store-sel") { S.storeSel = e.target.value; renderStore(); }
+  else if (e.target.id === "disc") { discOn = e.target.checked; renderImpact(); }
+});
+
+/* ---------- init ---------- */
+initState(); mountOps(); renderAll(); renderCase(); renderHero(); renderSliders(); renderBudget(); renderImpact();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
